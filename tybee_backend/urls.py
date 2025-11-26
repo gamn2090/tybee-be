@@ -29,7 +29,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('users.urls')),
     path('legal/', include('legal.urls')),
-    path('feedback/', include('feedback.urls')),
+    path('/', include('feedback.urls')),
     path('rules/', include('rules.urls')),
     path('local/', include('local_places.urls')),
     # drf-spectacular schema and docs endpoints

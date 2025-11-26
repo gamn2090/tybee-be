@@ -35,7 +35,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 
-# Secret key, debug, allowed hosts, and repo are handled by developer/environment
+
+# Load secret key, debug, and allowed hosts from environment
+import os
+SECRET_KEY = os.environ.get('SECRET_KEY', 'SECRET_KEY = "django-insecure-$*ghk$kn*dadqf!d3_3a2bumg%8ny^9zi34pozyi#x@tk9d_04"')
+DEBUG = os.environ.get('DEBUG', 'True')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -104,13 +109,15 @@ import os
 # Database: use RDS or custom Docker image for production
 # Example for PostgreSQL (update as needed)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', ''),
-        'USER': os.environ.get('POSTGRES_USER', ''),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
-        'HOST': os.environ.get('POSTGRES_HOST', ''),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+    "default": {
+        "ENGINE": os.getenv(
+            "DB_ENGINE", "django.db.backends.sqlite3"
+        ),  # Default to SQLite
+        "NAME": os.getenv("DB_NAME", BASE_DIR / "db.sqlite3"),  # Default to SQLite file
+        "USER": os.getenv("DB_USER", ""),  # Default to empty for SQLite
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),  # Default to empty for SQLite
+        "HOST": os.getenv("DB_HOST", "localhost"),  # Default to localhost
+        "PORT": os.getenv("DB_PORT", ""),  # Default to empty for SQLite
     }
 }
 

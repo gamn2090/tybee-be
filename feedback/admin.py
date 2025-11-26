@@ -1,9 +1,26 @@
-
 from django.contrib import admin
-from .models import UserFeedback
+from .models import UserFeedback, HelpRequest, ReportProblem, ContactUs
 
 @admin.register(UserFeedback)
 class UserFeedbackAdmin(admin.ModelAdmin):
-	list_display = ('user', 'feedback_type', 'status', 'created_at')
-	search_fields = ('user__email', 'feedback_type', 'status')
-	list_filter = ('status', 'feedback_type')
+    list_display = ('user', 'status', 'created_at')
+    search_fields = ('user__email', 'status')
+    list_filter = ('status',)
+
+@admin.register(HelpRequest)
+class HelpRequestAdmin(admin.ModelAdmin):
+    list_display = ('user', 'status', 'created_at')
+    search_fields = ('user__email', 'status')
+    list_filter = ('status',)
+
+@admin.register(ReportProblem)
+class ReportProblemAdmin(admin.ModelAdmin):
+    list_display = ('user', 'status', 'created_at')
+    search_fields = ('user__email', 'status')
+    list_filter = ('status',)
+
+@admin.register(ContactUs)
+class ContactUsAdmin(admin.ModelAdmin):
+    list_display = ('user', 'status', 'created_at')
+    search_fields = ('user__email', 'status')
+    list_filter = ('status',)
