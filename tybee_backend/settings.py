@@ -40,8 +40,44 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os
 SECRET_KEY = os.environ.get('SECRET_KEY', 'SECRET_KEY = "django-insecure-$*ghk$kn*dadqf!d3_3a2bumg%8ny^9zi34pozyi#x@tk9d_04"')
 DEBUG = os.environ.get('DEBUG', 'True')
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
 
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # React default
+    "http://127.0.0.1:3000",
+    "http://localhost:8080",  # Vue default
+    "http://127.0.0.1:8080",
+    "file://",  # For local HTML files
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Allow credentials (needed for authentication)
+CORS_ALLOW_CREDENTIALS = True
+
+# Allow specific headers
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "*",
+]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://\w+\.localhost$",
+    r"^http://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
+]
 
 # Application definition
 
@@ -120,7 +156,6 @@ DATABASES = {
         "PORT": os.getenv("DB_PORT", ""),  # Default to empty for SQLite
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

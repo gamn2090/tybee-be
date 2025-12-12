@@ -11,10 +11,10 @@ echo "Starting Django application..."
 #   sleep 0.5
 # done
 # echo "Database started"
-# echo "Database Host: $DB_HOST"
-# echo "Database Port: $DB_PORT"
-# echo "Database Name: $DB_NAME"
-# echo "Database User: $DB_USER"
+echo "Database Host: $DB_HOST"
+echo "Database Port: $DB_PORT"
+echo "Database Name: $DB_NAME"
+echo "Database User: $DB_USER"
 
 # Apply database migrations
 python manage.py migrate --noinput

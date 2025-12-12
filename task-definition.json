@@ -23,32 +23,12 @@
           "value": "True"
         },
         {
-          "name": "ALLOWED_HOSTS",
-          "value": "localhost,127.0.0.1"
-        },
-        {
           "name": "DB_ENGINE",
-          "value": ""
+          "value": "django.db.backends.postgresql"
         },
         {
           "name": "DB_NAME",
-          "value": ""
-        },
-        {
-          "name": "DB_USER",
-          "value": ""
-        },
-        {
-          "name": "DB_PASSWORD",
-          "value": ""
-        },
-        {
-          "name": "DB_HOST",
-          "value": ""
-        },
-        {
-          "name": "DB_PORT",
-          "value": "5432"
+          "value": "postgress"
         },
         {
           "name": "EMAIL_HOST",
@@ -73,6 +53,24 @@
         {
           "name": "SENTRY_DSN",
           "value": ""
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:DB-VtLI21:password::"
+        },
+        {
+          "name": "DB_USER",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:DB-VtLI21:username::"
+        },
+        {
+          "name": "DB_HOST",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:DB-VtLI21:host::"
+        },
+        {
+          "name": "DB_PORT",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:DB-VtLI21:port::"
         }
       ],
       "logConfiguration": {
