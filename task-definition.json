@@ -1,0 +1,95 @@
+{
+  "family": "tybee-backend-task",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "tybee-backend",
+      "image": "168379940497.dkr.ecr.us-east-2.amazonaws.com/tybee-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "SECRET_KEY",
+          "value": "django-insecure-$*ghk$kn*dadqf!d3_3a2bumg%8ny^9zi34pozyi#x@tk9d_04"
+        },
+        {
+          "name": "DEBUG",
+          "value": "True"
+        },
+        {
+          "name": "ALLOWED_HOSTS",
+          "value": "localhost,127.0.0.1"
+        },
+        {
+          "name": "DB_ENGINE",
+          "value": ""
+        },
+        {
+          "name": "DB_NAME",
+          "value": ""
+        },
+        {
+          "name": "DB_USER",
+          "value": ""
+        },
+        {
+          "name": "DB_PASSWORD",
+          "value": ""
+        },
+        {
+          "name": "DB_HOST",
+          "value": ""
+        },
+        {
+          "name": "DB_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "EMAIL_HOST",
+          "value": "smtp.example.com"
+        },
+        {
+          "name": "EMAIL_PORT",
+          "value": "587"
+        },
+        {
+          "name": "EMAIL_HOST_USER",
+          "value": "rohit.bhatt@protonshub.in"
+        },
+        {
+          "name": "EMAIL_HOST_PASSWORD",
+          "value": "jjgelmfyiulatutr"
+        },
+        {
+          "name": "DEFAULT_FROM_EMAIL",
+          "value": "rohit.bhatt@protonshub.in"
+        },
+        {
+          "name": "SENTRY_DSN",
+          "value": ""
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/tybee-backend",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::168379940497:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::168379940497:role/ecsTaskExecutionRole"
+}
