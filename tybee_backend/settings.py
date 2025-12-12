@@ -69,8 +69,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+
 CSRF_TRUSTED_ORIGINS = [
-    "*",
+    "http://tybee-backend-alb-549017210.us-east-2.elb.amazonaws.com/",
+    "https://tybee-backend-alb-549017210.us-east-2.elb.amazonaws.com/",
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [

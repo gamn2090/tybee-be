@@ -28,7 +28,7 @@
         },
         {
           "name": "DB_NAME",
-          "value": "postgress"
+          "value": "postgres"
         },
         {
           "name": "EMAIL_HOST",
