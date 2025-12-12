@@ -72,15 +72,7 @@
           "name": "DB_PORT",
           "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:DB-VtLI21:port::"
         }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/tybee-backend",
-          "awslogs-region": "us-east-2",
-          "awslogs-stream-prefix": "ecs"
-        }
-      }
+      ]
     }
   ],
   "requiresCompatibilities": [
