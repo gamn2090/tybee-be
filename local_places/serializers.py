@@ -1,8 +1,11 @@
+
 from rest_framework import serializers
 from .models import LocalPlace, StaticMap, Category, Tag, Activity, Tip
+from users.serializers import PresignedUrlField
 
 
 class LocalPlaceSerializer(serializers.ModelSerializer):
+    image = PresignedUrlField()
     class Meta:
         model = LocalPlace
         fields = '__all__'
@@ -28,6 +31,7 @@ class TipSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class StaticMapSerializer(serializers.ModelSerializer):
+    image = PresignedUrlField()
     class Meta:
         model = StaticMap
         fields = '__all__'

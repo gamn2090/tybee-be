@@ -71,6 +71,22 @@
         {
           "name": "DB_PORT",
           "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:DB-VtLI21:port::"
+        },
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:aws_keys-s9iivr:AWS_ACCESS_KEY_ID::"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:aws_keys-s9iivr:AWS_SECRET_ACCESS_KEY::"
+        },
+        {
+          "name": "AWS_S3_BUCKET_NAME",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:aws_keys-s9iivr:AWS_S3_BUCKET_NAME::"
+        },
+        {
+          "name": "AWS_REGION",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:aws_keys-s9iivr:AWS_REGION::"
         }
       ]
     }

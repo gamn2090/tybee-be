@@ -1,18 +1,4 @@
-# drf-spectacular settings
-REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-}
 
-# drf-spectacular settings: group endpoints by Django app
-SPECTACULAR_SETTINGS = {
-    'COMPONENT_SPLIT_REQUEST': True,
-    'SCHEMA_PATH_PREFIX_TRIM': True,
-    'APPEND_COMPONENTS': {},
-    'SORT_OPERATION_TAGS': True,
-    'SCHEMA_PATH_PREFIX': None,
-    'DEFAULT_GENERATOR_CLASS': 'drf_spectacular.generators.SchemaGenerator',
-    'TAGS': [],  # Let drf-spectacular auto-generate tags from app names
-}
 """
 Django settings for tybee_backend project.
 
@@ -25,10 +11,44 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
+
+# drf-spectacular settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# JWT settings: Extend access token lifetime to 24 hours
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
+# drf-spectacular settings: group endpoints by Django app
+SPECTACULAR_SETTINGS = {
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX_TRIM': True,
+    'APPEND_COMPONENTS': {},
+    'SORT_OPERATION_TAGS': True,
+    'SCHEMA_PATH_PREFIX': None,
+    'DEFAULT_GENERATOR_CLASS': 'drf_spectacular.generators.SchemaGenerator',
+    'TAGS': [],  # Let drf-spectacular auto-generate tags from app names
+}
+
+
+import environ
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -36,11 +56,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
-# Load secret key, debug, and allowed hosts from environment
-import os
-SECRET_KEY = os.environ.get('SECRET_KEY', 'SECRET_KEY = "django-insecure-$*ghk$kn*dadqf!d3_3a2bumg%8ny^9zi34pozyi#x@tk9d_04"')
-DEBUG = os.environ.get('DEBUG', 'True')
-ALLOWED_HOSTS = ["*"]
+
+# Load secret key, debug, and allowed hosts from .env
+SECRET_KEY = env('SECRET_KEY', default='changeme')
+DEBUG = env.bool('DEBUG', default=True)
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 
 CORS_ALLOWED_ORIGINS = [
@@ -73,6 +93,8 @@ CORS_ALLOW_HEADERS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://tybee-backend-alb-549017210.us-east-2.elb.amazonaws.com/",
     "https://tybee-backend-alb-549017210.us-east-2.elb.amazonaws.com/",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -101,6 +123,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'drf_spectacular_sidecar',
     'import_export',
+    'storages',
     # Project apps
     'users',
     'profiles',
@@ -149,14 +172,12 @@ import os
 # Example for PostgreSQL (update as needed)
 DATABASES = {
     "default": {
-        "ENGINE": os.getenv(
-            "DB_ENGINE", "django.db.backends.sqlite3"
-        ),  # Default to SQLite
-        "NAME": os.getenv("DB_NAME", BASE_DIR / "db.sqlite3"),  # Default to SQLite file
-        "USER": os.getenv("DB_USER", ""),  # Default to empty for SQLite
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),  # Default to empty for SQLite
-        "HOST": os.getenv("DB_HOST", "localhost"),  # Default to localhost
-        "PORT": os.getenv("DB_PORT", ""),  # Default to empty for SQLite
+        "ENGINE": env('DB_ENGINE', default='django.db.backends.sqlite3'),
+        "NAME": env('DB_NAME', default=str(BASE_DIR / "db.sqlite3")),
+        "USER": env('DB_USER', default=''),
+        "PASSWORD": env('DB_PASSWORD', default=''),
+        "HOST": env('DB_HOST', default='localhost'),
+        "PORT": env('DB_PORT', default=''),
     }
 }
 
@@ -202,18 +223,49 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# AWS S3 storage (optional, fallback to local if not configured)
-# AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-# AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-# AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
-# AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', '')
 
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+# AWS S3 storage (recommended for ECS/production)
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+AWS_S3_REGION_NAME = os.environ.get('AWS_REGION', '')
+AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', '')
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+USE_S3 = all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME])
+print("USE_S3:", USE_S3)
+# Replace lines 235-246 with:
+if USE_S3:
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = True
+    AWS_S3_CUSTOM_DOMAIN = AWS_S3_CUSTOM_DOMAIN or f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_URL = '/media/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+print("AWS_S3_CUSTOM_DOMAIN:", AWS_S3_CUSTOM_DOMAIN)
+
+print("default file storage:", STORAGES["default"]["BACKEND"])
+# Always serve static files locally (not from S3) for swagger sidecar and other static assets
+STATIC_URL = '/static/'
+import os
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

@@ -3,65 +3,49 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from .models import User, PasswordResetOTP
-from .serializers import UserSerializer, SignupSerializer, PasswordResetOTPSerializer
+from .serializers import ChangePasswordSerializer, ForgotPasswordSerializer, UserSerializer, SignupSerializer, ForgotPasswordConfirmSerializer, VerifyOTPSerializer
 from django.utils import timezone
 from django.core.mail import send_mail
 import random
 import string
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
-# Send OTP for signup (no user yet)
-class SendSignupOTPView(generics.GenericAPIView):
-	permission_classes = [permissions.AllowAny]
-	def post(self, request):
-		email = request.data.get('email')
-		if not email:
-			return Response({'detail': 'Email required.'}, status=status.HTTP_400_BAD_REQUEST)
-		# Generate OTP
-		otp_code = ''.join(random.choices(string.digits, k=6))
-		expires_at = timezone.now() + timezone.timedelta(minutes=10)
-		PasswordResetOTP.objects.create(user=None, email=email, otp_code=otp_code, expires_at=expires_at)
-		send_mail(
-			'Your Signup OTP',
-			f'Your OTP code is: {otp_code}',
-			None,
-			[email],
-		)
-		return Response({'detail': 'Signup OTP sent to email.'})
-
+@extend_schema(tags=["Password & OTP"])
 class ForgotPasswordView(generics.GenericAPIView):
 	permission_classes = [permissions.AllowAny]
+	serializer_class = ForgotPasswordSerializer
 	def post(self, request):
-		email = request.data.get('email')
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		phone_number = serializer.validated_data.get('phone_number')
 		try:
-			user = User.objects.get(email=email)
+			user = User.objects.get(phone_number=phone_number)
 		except User.DoesNotExist:
 			return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 		# Generate OTP
 		otp_code = ''.join(random.choices(string.digits, k=6))
 		expires_at = timezone.now() + timezone.timedelta(minutes=10)
 		PasswordResetOTP.objects.create(user=user, otp_code=otp_code, expires_at=expires_at)
-		# Send OTP via email (simple example)
-		send_mail(
-			'Your Password Reset OTP',
-			f'Your OTP code is: {otp_code}',
-			None,
-			[user.email],
-		)
-		return Response({'detail': 'OTP sent to email.'})
+		# Placeholder for phone OTP integration
+		# TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+		print(f"[DEBUG] OTP for {phone_number}: {otp_code}")
+		return Response({'detail': 'OTP sent to phone number.', "OTP": otp_code})
 
-class ResetPasswordView(generics.GenericAPIView):
+
+@extend_schema(tags=["Password & OTP"])
+class VerifyOTPView(generics.GenericAPIView):
 	permission_classes = [permissions.AllowAny]
-	serializer_class = PasswordResetOTPSerializer
+	serializer_class = VerifyOTPSerializer
 
 	def post(self, request):
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
-		email = serializer.validated_data.get('email')
+		phone_number = serializer.validated_data.get('phone_number')
 		otp_code = serializer.validated_data.get('otp_code')
-		new_password = serializer.validated_data.get('password')
 		try:
-			user = User.objects.get(email=email)
+			user = User.objects.get(phone_number=phone_number)
 		except User.DoesNotExist:
 			return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 		try:
@@ -70,11 +54,45 @@ class ResetPasswordView(generics.GenericAPIView):
 			return Response({'detail': 'Invalid OTP.'}, status=status.HTTP_400_BAD_REQUEST)
 		if otp.expires_at < timezone.now():
 			return Response({'detail': 'OTP expired.'}, status=status.HTTP_400_BAD_REQUEST)
+		else:
+			otp.is_used = True
+			otp.save()
+		return Response({'detail': 'OTP verified successfully.'})
+
+
+@extend_schema(tags=["Password & OTP"])
+class ForgetPasswordConfirmView(generics.GenericAPIView):
+	permission_classes = [permissions.AllowAny]
+	serializer_class = ForgotPasswordConfirmSerializer
+
+	def post(self, request):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		phone_number = serializer.validated_data.get('phone_number')
+		new_password = serializer.validated_data.get('password')
+		try:
+			user = User.objects.get(phone_number=phone_number)
+		except User.DoesNotExist:
+			return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
 		user.set_password(new_password)
 		user.save()
-		otp.is_used = True
-		otp.save()
 		return Response({'detail': 'Password reset successful.'})
+
+
+@extend_schema(tags=["Password & OTP"])
+class ChangePasswordView(generics.GenericAPIView):
+	permission_classes = [permissions.IsAuthenticated]
+	serializer_class = ChangePasswordSerializer
+	def post(self, request):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		user = request.user
+		new_password = serializer.validated_data.get('new_password')
+		user.set_password(new_password)
+		user.save()
+		return Response({'detail': 'Password changed successfully.'})
+
 
 class LoginView(TokenObtainPairView):
 	permission_classes = [permissions.AllowAny]
@@ -86,23 +104,11 @@ class SignupView(generics.CreateAPIView):
 	def create(self, request, *args, **kwargs):
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
-		email = serializer.validated_data.get('email')
-		otp_code = serializer.validated_data.get('otp')
-		# Check OTP
-		try:
-			otp = PasswordResetOTP.objects.filter(user__email=email, otp_code=otp_code, is_used=False).latest('expires_at')
-		except PasswordResetOTP.DoesNotExist:
-			return Response({'detail': 'Invalid or missing OTP.'}, status=status.HTTP_400_BAD_REQUEST)
-		if otp.expires_at < timezone.now():
-			return Response({'detail': 'OTP expired.'}, status=status.HTTP_400_BAD_REQUEST)
-		# Mark OTP as used
-		otp.is_used = True
-		otp.save()
 		return super().create(request, *args, **kwargs)
 
 class UserViewSet(viewsets.ModelViewSet):
 	queryset = User.objects.all()
 	serializer_class = UserSerializer
+	parser_classes = (MultiPartParser, FormParser)
 	permission_classes = [permissions.IsAdminUser]
 	http_method_names = ['get', 'post', 'delete', "put"]
-
