@@ -93,10 +93,32 @@ class ChangePasswordView(generics.GenericAPIView):
 		user.save()
 		return Response({'detail': 'Password changed successfully.'})
 
-
+@extend_schema(tags=["Signup & Login"])
 class LoginView(TokenObtainPairView):
 	permission_classes = [permissions.AllowAny]
 
+@extend_schema(tags=["Signup & Login"])
+class SendOTPView(generics.GenericAPIView):
+	serializer_class = ForgotPasswordSerializer
+	permission_classes = [permissions.AllowAny]
+
+	def post(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		phone_number = serializer.validated_data.get('phone_number')
+		user = User.objects.filter(phone_number=phone_number)
+		if user.exists():
+			return Response({'detail': 'User with phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+		# Generate OTP
+		otp_code = ''.join(random.choices(string.digits, k=6))
+		expires_at = timezone.now() + timezone.timedelta(minutes=10)
+		SignupOTP.objects.create(otp_code=otp_code, expires_at=expires_at)
+		#TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+		print(f"[DEBUG] OTP for {phone_number}: {otp_code}")
+		
+		return Response({'detail': 'OTP sent to phone number.', "OTP": otp_code})
+
+@extend_schema(tags=["Signup & Login"])
 class SignupView(generics.CreateAPIView):
 	serializer_class = SignupSerializer
 	permission_classes = [permissions.AllowAny]
@@ -106,6 +128,7 @@ class SignupView(generics.CreateAPIView):
 		serializer.is_valid(raise_exception=True)
 		return super().create(request, *args, **kwargs)
 
+@extend_schema(tags=["Profile"])
 class UserViewSet(viewsets.ModelViewSet):
 	queryset = User.objects.all()
 	serializer_class = UserSerializer

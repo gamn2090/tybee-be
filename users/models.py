@@ -42,3 +42,10 @@ class PasswordResetOTP(models.Model):
 	def __str__(self):
 		return f"OTP for {self.user.email}"
 
+class signupOTP(models.Model):
+	otp_code = models.CharField(max_length=10)
+	expires_at = models.DateTimeField()
+	is_used = models.BooleanField(default=False)
+	def __str__(self):
+		return f"OTP for {self.otp_code}"
+
