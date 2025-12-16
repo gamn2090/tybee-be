@@ -81,7 +81,7 @@
           "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:aws_keys-s9iivr:AWS_SECRET_ACCESS_KEY::"
         },
         {
-          "name": "AWS_S3_BUCKET_NAME",
+          "name": "AWS_STORAGE_BUCKET_NAME",
           "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:aws_keys-s9iivr:AWS_S3_BUCKET_NAME::"
         },
         {
