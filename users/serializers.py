@@ -61,14 +61,14 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ('first_name', 'last_name', 'phone_number', 'zipcode', 'password', 'otp_code', 'access_token', 'refresh_token')
     
-    def validate_otp_code(self, value):
-        if not value:
-            raise serializers.ValidationError("OTP code is required.")
+    # def validate_otp_code(self, value):
+    #     if not value:
+    #         raise serializers.ValidationError("OTP code is required.")
         
-        otp = signupOTP.objects.filter(otp_code=value, is_used=False).exists()
-        if not otp:
-            raise serializers.ValidationError("Invalid OTP code.")
-        return value
+    #     otp = signupOTP.objects.filter(otp_code=value, is_used=False).exists()
+    #     if not otp:
+    #         raise serializers.ValidationError("Invalid OTP code.")
+    #     return value
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -78,12 +78,12 @@ class SignupSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
             zipcode=validated_data.get('zipcode', '')
         )
-        otp = signupOTP.objects.filter(user=user, otp_code=validated_data['otp_code'], is_used=False).exists()
-        if otp:
-            otp.is_used = True
-            otp.save()
-        else:
-            raise serializers.ValidationError("Invalid OTP code.")
+        # otp = signupOTP.objects.filter(user=user, otp_code=validated_data['otp_code'], is_used=False).exists()
+        # if otp:
+        #     otp.is_used = True
+        #     otp.save()
+        # else:
+        #     raise serializers.ValidationError("Invalid OTP code.")
         refresh = RefreshToken.for_user(user)
         user._refresh_token = str(refresh)
         user._access_token = str(refresh.access_token)
