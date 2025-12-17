@@ -133,5 +133,5 @@ class UserViewSet(viewsets.ModelViewSet):
 	queryset = User.objects.all()
 	serializer_class = UserSerializer
 	parser_classes = (MultiPartParser, FormParser)
-	permission_classes = [permissions.IsAdminUser]
+	permission_classes = [permissions.IsAuthenticated]
 	http_method_names = ['get', 'post', 'delete', "put"]
