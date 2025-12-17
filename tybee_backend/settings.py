@@ -68,8 +68,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:8080",  # Vue default
     "http://127.0.0.1:8080",
-    "file://",  # For local HTML files
-    "https://api.tybeego.com/",
+    "https://api.tybeego.com",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -92,18 +91,18 @@ CORS_ALLOW_HEADERS = [
 
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://tybee-backend-alb-549017210.us-east-2.elb.amazonaws.com/",
-    "https://tybee-backend-alb-549017210.us-east-2.elb.amazonaws.com/",
+    "http://tybee-backend-alb-549017210.us-east-2.elb.amazonaws.com",
+    "https://tybee-backend-alb-549017210.us-east-2.elb.amazonaws.com",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "https://api.tybeego.com/",
+    "https://api.tybeego.com",
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://\w+\.localhost$",
     r"^http://localhost:\d+$",
     r"^http://127\.0\.0\.1:\d+$",
-    r"^https://api.tybeego.com/",
+    r"^https://api\.tybeego\.com$",
 ]
 
 # Application definition
