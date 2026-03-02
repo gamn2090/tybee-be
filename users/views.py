@@ -2,14 +2,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
-from .models import User, PasswordResetOTP
-from .serializers import ChangePasswordSerializer, ForgotPasswordSerializer, UserSerializer, SignupSerializer, ForgotPasswordConfirmSerializer, VerifyOTPSerializer
+from .models import User, PasswordResetOTP, signupOTP
+from .serializers import ChangePasswordSerializer, ForgotPasswordSerializer, UserSerializer, SignupSerializer, ForgotPasswordConfirmSerializer, VerifyOTPSerializer, ResendOTPSerializer, VerifySignupOTPSerializer
 from django.utils import timezone
 from django.core.mail import send_mail
 import random
 import string
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 
 @extend_schema(tags=["Password & OTP"])
@@ -25,7 +25,8 @@ class ForgotPasswordView(generics.GenericAPIView):
 		except User.DoesNotExist:
 			return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 		# Generate OTP
-		otp_code = ''.join(random.choices(string.digits, k=6))
+		# otp_code = ''.join(random.choices(string.digits, k=6))  # Random OTP (commented for prefixed OTP)
+		otp_code = '123456'  # Prefixed OTP for initial forgot-password request
 		expires_at = timezone.now() + timezone.timedelta(minutes=10)
 		PasswordResetOTP.objects.create(user=user, otp_code=otp_code, expires_at=expires_at)
 		# Placeholder for phone OTP integration
@@ -110,28 +111,137 @@ class SendOTPView(generics.GenericAPIView):
 		if user.exists():
 			return Response({'detail': 'User with phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 		# Generate OTP
-		otp_code = ''.join(random.choices(string.digits, k=6))
+		# otp_code = ''.join(random.choices(string.digits, k=6))  # Random OTP (commented for prefixed OTP)
+		otp_code = '123456'  # Prefixed OTP for initial signup request
 		expires_at = timezone.now() + timezone.timedelta(minutes=10)
-		SignupOTP.objects.create(otp_code=otp_code, expires_at=expires_at)
-		#TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+		signupOTP.objects.create(otp_code=otp_code, expires_at=expires_at)
+		# TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
 		print(f"[DEBUG] OTP for {phone_number}: {otp_code}")
 		
 		return Response({'detail': 'OTP sent to phone number.', "OTP": otp_code})
 
 @extend_schema(tags=["Signup & Login"])
-class SignupView(generics.CreateAPIView):
+class ResendOTPView(generics.GenericAPIView):
+	"""
+	Resend OTP for both signup and forgot password flows.
+	- type = 'signup'          → returns prefixed OTP 654321 (phone must NOT be registered)
+	- type = 'forgot_password' → returns prefixed OTP 654321 (phone must be registered)
+	All previous OTPs for the phone are invalidated before issuing the new one.
+	"""
+	serializer_class = ResendOTPSerializer
+	permission_classes = [permissions.AllowAny]
+
+	def post(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		phone_number = serializer.validated_data.get('phone_number')
+		otp_type = serializer.validated_data.get('type')
+
+		# Resend OTP (prefixed)
+		# otp_code = ''.join(random.choices(string.digits, k=6))  # Random OTP (commented for prefixed OTP)
+		otp_code = '654321'  # Prefixed OTP for resend
+		expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+		if otp_type == 'signup':
+			if User.objects.filter(phone_number=phone_number, is_active=True).exists():
+				return Response({'detail': 'User with this phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+			# Invalidate all previous signup OTPs for this phone
+			signupOTP.objects.filter(phone_number=phone_number, is_used=False).update(is_used=True)
+			signupOTP.objects.create(phone_number=phone_number, otp_code=otp_code, expires_at=expires_at)
+
+		elif otp_type == 'forgot_password':
+			try:
+				user = User.objects.get(phone_number=phone_number)
+			except User.DoesNotExist:
+				return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+			# Invalidate all previous forgot-password OTPs for this user
+			PasswordResetOTP.objects.filter(user=user, is_used=False).update(is_used=True)
+			PasswordResetOTP.objects.create(user=user, otp_code=otp_code, expires_at=expires_at)
+
+		# TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+		print(f"[DEBUG] Resend OTP ({otp_type}) for {phone_number}: {otp_code}")
+		return Response({'detail': 'OTP resent to phone number.', 'OTP': otp_code})
+
+
+@extend_schema(tags=["Signup & Login"])
+class SignupView(generics.GenericAPIView):
 	serializer_class = SignupSerializer
 	permission_classes = [permissions.AllowAny]
 
-	def create(self, request, *args, **kwargs):
+	def post(self, request, *args, **kwargs):
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
-		return super().create(request, *args, **kwargs)
+		phone_number = serializer.validated_data.get('phone_number')
+
+		# Create the user as inactive
+		user = serializer.save()
+
+		# Generate and store OTP for this phone number
+		# otp_code = ''.join(random.choices(string.digits, k=6))  # Random OTP (commented for prefixed OTP)
+		otp_code = '123456'  # Prefixed OTP for signup
+		expires_at = timezone.now() + timezone.timedelta(minutes=10)
+		signupOTP.objects.create(phone_number=phone_number, otp_code=otp_code, expires_at=expires_at)
+		# TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+		print(f"[DEBUG] Signup OTP for {phone_number}: {otp_code}")
+
+		return Response(
+			{'detail': 'Account created. Please verify the OTP to activate your account.', 'OTP': otp_code},
+			status=status.HTTP_201_CREATED
+		)
+
+
+@extend_schema(tags=["Signup & Login"])
+class VerifySignupOTPView(generics.GenericAPIView):
+	"""
+	Verify the OTP sent at signup.
+	On success: activates the user account and returns JWT tokens.
+	"""
+	serializer_class = VerifySignupOTPSerializer
+	permission_classes = [permissions.AllowAny]
+
+	def post(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		phone_number = serializer.validated_data.get('phone_number')
+		otp_code = serializer.validated_data.get('otp_code')
+
+		# Find the user (still inactive)
+		try:
+			user = User.objects.get(phone_number=phone_number, is_active=False)
+		except User.DoesNotExist:
+			return Response({'detail': 'User not found or already active.'}, status=status.HTTP_404_NOT_FOUND)
+
+		# Find a valid, unused OTP for this phone
+		try:
+			otp = signupOTP.objects.filter(
+				phone_number=phone_number,
+				otp_code=otp_code,
+				is_used=False
+			).latest('expires_at')
+		except signupOTP.DoesNotExist:
+			return Response({'detail': 'Invalid OTP.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		if otp.expires_at < timezone.now():
+			return Response({'detail': 'OTP has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		# Mark OTP as used and activate the user
+		otp.is_used = True
+		otp.save()
+		user.is_active = True
+		user.save()
+
+		# Return JWT tokens
+		refresh = RefreshToken.for_user(user)
+		return Response({
+			'detail': 'Account verified successfully.',
+			'access_token': str(refresh.access_token),
+			'refresh_token': str(refresh),
+		})
 
 @extend_schema(tags=["Profile"])
 class UserViewSet(viewsets.ModelViewSet):
 	queryset = User.objects.all()
 	serializer_class = UserSerializer
-	parser_classes = (MultiPartParser, FormParser)
+	parser_classes = (MultiPartParser, FormParser, JSONParser)
 	permission_classes = [permissions.IsAuthenticated]
 	http_method_names = ['get', 'post', 'delete', "put"]

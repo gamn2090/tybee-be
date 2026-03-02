@@ -39,10 +39,15 @@ class PresignedUrlField(serializers.ReadOnlyField):
 class UserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.ImageField(write_only=True, required=False, allow_null=True)
     profile_pic_presigned = PresignedUrlField(source='profile_pic', read_only=True)
+    phone_number = serializers.CharField(read_only=True)  # Phone number cannot be changed after signup
 
     class Meta:
         model = User
         fields = ('id', 'first_name', 'last_name', 'phone_number', 'zipcode', 'is_active', 'date_joined', 'profile_pic', 'profile_pic_presigned')
+        extra_kwargs = {
+            'is_active': {'read_only': True},    # Cannot be changed via profile update
+            'date_joined': {'read_only': True},  # Cannot be changed via profile update
+        }
 
 
 class ForgotPasswordSerializer(serializers.Serializer):
@@ -53,48 +58,22 @@ class ForgotPasswordSerializer(serializers.Serializer):
 
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-    otp_code = serializers.CharField(write_only=True)
-    access_token = serializers.CharField(read_only=True)
-    refresh_token = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'phone_number', 'zipcode', 'password', 'otp_code', 'access_token', 'refresh_token')
-    
-    # def validate_otp_code(self, value):
-    #     if not value:
-    #         raise serializers.ValidationError("OTP code is required.")
-        
-    #     otp = signupOTP.objects.filter(otp_code=value, is_used=False).exists()
-    #     if not otp:
-    #         raise serializers.ValidationError("Invalid OTP code.")
-    #     return value
+        fields = ('first_name', 'last_name', 'phone_number', 'zipcode', 'password')
 
     def create(self, validated_data):
+        # Create user as inactive — must verify OTP to become active
         user = User.objects.create_user(
             phone_number=validated_data.get('phone_number'),
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
-            zipcode=validated_data.get('zipcode', '')
+            zipcode=validated_data.get('zipcode', ''),
+            is_active=False,
         )
-        # otp = signupOTP.objects.filter(user=user, otp_code=validated_data['otp_code'], is_used=False).exists()
-        # if otp:
-        #     otp.is_used = True
-        #     otp.save()
-        # else:
-        #     raise serializers.ValidationError("Invalid OTP code.")
-        refresh = RefreshToken.for_user(user)
-        user._refresh_token = str(refresh)
-        user._access_token = str(refresh.access_token)
         return user
-
-    def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        # Add tokens to response if present
-        ret['refresh_token'] = getattr(instance, '_refresh_token', None)
-        ret['access_token'] = getattr(instance, '_access_token', None)
-        return ret
 
 class VerifyOTPSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=20)
@@ -102,6 +81,23 @@ class VerifyOTPSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['phone_number', 'otp_code']
+
+
+class VerifySignupOTPSerializer(serializers.Serializer):
+    """Verifies the signup OTP and activates the user account."""
+    phone_number = serializers.CharField(max_length=20)
+    otp_code = serializers.CharField(max_length=6)
+
+    class Meta:
+        fields = ['phone_number', 'otp_code']
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(max_length=20)
+    type = serializers.ChoiceField(choices=['signup', 'forgot_password'])
+
+    class Meta:
+        fields = ['phone_number', 'type']
 
 class ForgotPasswordConfirmSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=20)
