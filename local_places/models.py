@@ -1,15 +1,23 @@
 from django.db import models
+from django.core.validators import FileExtensionValidator
 
 
 class StaticMap(models.Model):
 	title = models.CharField(max_length=255)
-	image = models.ImageField(upload_to='static_maps/')
+	image = models.ImageField(
+		upload_to='static_maps/',
+		validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'gif'])],
+	)
 	description = models.TextField(blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
 		return self.title
+
+	class Meta:
+		verbose_name = 'Static Map'
+		verbose_name_plural = 'Static Maps'
 
 
 
@@ -18,6 +26,10 @@ class Category(models.Model):
 	description = models.TextField(blank=True)
 	def __str__(self):
 		return self.title
+
+	class Meta:
+		verbose_name = 'Category'
+		verbose_name_plural = 'Categories'
 
 class Tag(models.Model):
 	title = models.CharField(max_length=100, unique=True)
@@ -31,6 +43,10 @@ class Activity(models.Model):
 	def __str__(self):
 		return self.title
 
+	class Meta:
+		verbose_name = 'Activity'
+		verbose_name_plural = 'Activities'
+
 class Tip(models.Model):
 	name = models.CharField(max_length=255)
 	description = models.TextField(blank=True)
@@ -40,7 +56,12 @@ class Tip(models.Model):
 
 class LocalPlace(models.Model):
 	name = models.CharField(max_length=255)
-	image = models.ImageField(upload_to='local_places/', blank=True, null=True)
+	image = models.ImageField(
+		upload_to='local_places/',
+		blank=True,
+		null=True,
+		validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'gif'])],
+	)
 	highlight = models.CharField(max_length=255, blank=True)
 	description = models.TextField()
 	category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='places')
@@ -56,3 +77,7 @@ class LocalPlace(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	def __str__(self):
 		return self.name
+
+	class Meta:
+		verbose_name = 'Local Place'
+		verbose_name_plural = 'Local Places'

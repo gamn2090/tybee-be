@@ -11,6 +11,24 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from django.utils.translation import gettext_lazy as _
+from tybee_backend.admin.navigation import NAVIGATION
+
+UNFOLD = {
+    "SITE_TITLE": "Tybee Admin Dashboard",
+    "SITE_HEADER": "Tybee Admin Dashboard",
+    "SITE_SYMBOL": "travel_explore",
+    "DASHBOARD_CALLBACK": "tybee_backend.admin.dashboard.dashboard_callback",
+    "LOGIN": {
+        "title": "Welcome to Tybee Admin Dashboard",
+        "subtitle": "Manage platform data",
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": NAVIGATION,
+    },
+}
 
 # drf-spectacular settings
 REST_FRAMEWORK = {
@@ -68,9 +86,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8080",
     "https://api.tybeego.com",
     "http://13.48.128.119",
+    "https://app.api.tybeego.com",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True
 
 # Allow credentials (needed for authentication)
 CORS_ALLOW_CREDENTIALS = True
@@ -96,6 +115,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
     "https://api.tybeego.com",
     "http://13.48.128.119",
+    "https://app.api.tybeego.com",
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -135,6 +155,7 @@ INSTALLED_APPS = [
     "local_places",
 ]
 
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -151,7 +172,7 @@ ROOT_URLCONF = "tybee_backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -225,16 +246,15 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
 # AWS S3 storage (recommended for ECS/production)
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
-AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
-AWS_S3_REGION_NAME = os.environ.get("AWS_REGION", "")
-AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN", "")
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME")
 
 USE_S3 = all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME])
-print("USE_S3:", USE_S3)
-# Replace lines 235-246 with:
+
 if USE_S3:
+
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
@@ -243,28 +263,22 @@ if USE_S3:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
+
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
-    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_AUTH = False
+
     AWS_S3_CUSTOM_DOMAIN = (
-        AWS_S3_CUSTOM_DOMAIN
-        or f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+        f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
     )
+
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+
 else:
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
+
     MEDIA_URL = "/media/"
 
-print("AWS_S3_CUSTOM_DOMAIN:", AWS_S3_CUSTOM_DOMAIN)
-
-print("default file storage:", STORAGES["default"]["BACKEND"])
 
 # Always serve static files locally (not from S3) for swagger sidecar and other static assets
 STATIC_URL = "/static/"
@@ -273,6 +287,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ── File Upload Constraints ──────────────────────────────────────────────────
+MAX_UPLOAD_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+ALLOWED_UPLOAD_CONTENT_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+]
 
 # SMTP/Email settings (to be set via environment or secrets manager)
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")

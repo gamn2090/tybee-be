@@ -1,6 +1,7 @@
 # Custom user and password reset OTP models
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.core.validators import FileExtensionValidator
 from django.utils import timezone
 
 class UserManager(BaseUserManager):
@@ -18,7 +19,12 @@ class UserManager(BaseUserManager):
 		return self.create_user(phone_number, password, **extra_fields)
 
 class User(AbstractBaseUser, PermissionsMixin):
-	profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+	profile_pic = models.ImageField(
+		upload_to='profile_pics/',
+		blank=True,
+		null=True,
+		validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'gif'])],
+	)
 	first_name = models.CharField(max_length=60)
 	last_name = models.CharField(max_length=60)
 	phone_number = models.CharField(max_length=20, unique=True)

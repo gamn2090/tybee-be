@@ -26,3 +26,8 @@ class Rule(models.Model):
 
 	def __str__(self):
 		return f"{self.category.name}: {self.title}"
+
+	class Meta:
+		verbose_name = 'Rule'
+		verbose_name_plural = 'Rules'
+		ordering = ['category', 'title']

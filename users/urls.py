@@ -5,6 +5,7 @@ from .views import (
     LoginView, ForgotPasswordView, VerifyOTPView,
     ResendOTPView, SendOTPView, VerifySignupOTPView,
 )
+from .presigned_views import GeneratePresignedUploadUrlView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
@@ -21,5 +22,6 @@ urlpatterns = [
     path('reset-password/', ForgetPasswordConfirmView.as_view(), name='reset-password'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('send-otp/', SendOTPView.as_view(), name='send-otp'),
+    path('upload/presigned-url/', GeneratePresignedUploadUrlView.as_view(), name='presigned-upload-url'),
     path('', include(router.urls)),
 ]

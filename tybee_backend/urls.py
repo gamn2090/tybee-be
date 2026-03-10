@@ -18,6 +18,11 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+
+admin.site.site_header = "Tybee Admin Dashboard"
+admin.site.site_title = "Tybee Admin Dashboard"
+admin.site.index_title = "Welcome to Tybee Admin Dashboard"
+
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
