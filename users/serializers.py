@@ -38,16 +38,40 @@ class PresignedUrlField(serializers.ReadOnlyField):
 
 class UserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.ImageField(write_only=True, required=False, allow_null=True)
+    profile_pic_key = serializers.CharField(write_only=True, required=False, allow_null=True, help_text="S3 object key from a direct presigned URL upload.")
     profile_pic_presigned = PresignedUrlField(source='profile_pic', read_only=True)
     phone_number = serializers.CharField(read_only=True)  # Phone number cannot be changed after signup
 
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'last_name', 'phone_number', 'zipcode', 'is_active', 'date_joined', 'profile_pic', 'profile_pic_presigned')
+        fields = ('id', 'first_name', 'last_name', 'phone_number', 'zipcode', 'is_active', 'date_joined', 'profile_pic', 'profile_pic_key', 'profile_pic_presigned')
         extra_kwargs = {
             'is_active': {'read_only': True},    # Cannot be changed via profile update
             'date_joined': {'read_only': True},  # Cannot be changed via profile update
         }
+
+    def validate_profile_pic(self, value):
+        if value is None:
+            return value
+        # Enforce 5 MB size limit
+        max_size = getattr(settings, 'MAX_UPLOAD_FILE_SIZE', 5 * 1024 * 1024)
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                f"File size {value.size / (1024 * 1024):.1f} MB exceeds the maximum allowed size of {max_size / (1024 * 1024):.0f} MB."
+            )
+        # Enforce allowed content types
+        allowed_types = getattr(settings, 'ALLOWED_UPLOAD_CONTENT_TYPES', [])
+        if allowed_types and value.content_type not in allowed_types:
+            raise serializers.ValidationError(
+                f"File type '{value.content_type}' is not allowed. Accepted types: {', '.join(allowed_types)}."
+            )
+        return value
+
+    def update(self, instance, validated_data):
+        profile_pic_key = validated_data.pop('profile_pic_key', None)
+        if profile_pic_key:
+            validated_data['profile_pic'] = profile_pic_key
+        return super().update(instance, validated_data)
 
 
 class ForgotPasswordSerializer(serializers.Serializer):

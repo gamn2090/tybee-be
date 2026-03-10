@@ -1,0 +1,339 @@
+{% extends 'admin/base.html' %}
+
+{% load i18n %}
+
+{% block title %}Tybee Admin Dashboard{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<style>
+    .tybee-dashboard { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .tybee-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    .tybee-stat-card {
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .tybee-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+    }
+    .tybee-stat-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .tybee-stat-card:nth-child(2) { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15); }
+    .tybee-stat-card:nth-child(2):hover { box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3); }
+    .tybee-stat-card:nth-child(3) { background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%); box-shadow: 0 4px 20px rgba(251, 146, 60, 0.15); }
+    .tybee-stat-card:nth-child(3):hover { box-shadow: 0 8px 30px rgba(251, 146, 60, 0.3); }
+    .tybee-stat-card:nth-child(4) { background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%); box-shadow: 0 4px 20px rgba(167, 139, 250, 0.15); }
+    .tybee-stat-card:nth-child(4):hover { box-shadow: 0 8px 30px rgba(167, 139, 250, 0.3); }
+    .tybee-stat-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.85;
+    }
+    .tybee-stat-value {
+        font-size: 2.25rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 0.25rem;
+    }
+    .tybee-stat-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .tybee-charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .tybee-chart-card {
+        background: var(--bg-color, #fff);
+        border: 1px solid var(--border-color, #e5e7eb);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .tybee-chart-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--text-color, #111827);
+    }
+    .tybee-chart-canvas {
+        width: 100% !important;
+        max-height: 320px;
+    }
+    .tybee-table-card {
+        background: var(--bg-color, #fff);
+        border: 1px solid var(--border-color, #e5e7eb);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 1.5rem;
+    }
+    .tybee-table-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--text-color, #111827);
+    }
+    .tybee-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .tybee-table th {
+        text-align: left;
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--secondary-text, #6b7280);
+        border-bottom: 2px solid var(--border-color, #e5e7eb);
+    }
+    .tybee-table td {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        color: var(--text-color, #374151);
+        border-bottom: 1px solid var(--border-color, #f3f4f6);
+    }
+    .tybee-table tr:last-child td { border-bottom: none; }
+    .tybee-table tr:hover td { background: var(--hover-bg, #f9fafb); }
+
+    /* Dark mode support */
+    .dark .tybee-chart-card,
+    .dark .tybee-table-card {
+        --bg-color: #1f2937;
+        --border-color: #374151;
+        --text-color: #f3f4f6;
+        --secondary-text: #9ca3af;
+        --hover-bg: #374151;
+    }
+
+    .tybee-dashboard-header {
+        margin-bottom: 2rem;
+    }
+    .tybee-dashboard-header h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.25rem 0;
+    }
+    .tybee-dashboard-header p {
+        color: var(--secondary-text, #6b7280);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .tybee-charts-grid { grid-template-columns: 1fr; }
+        .tybee-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+
+<div class="tybee-dashboard">
+    <div class="tybee-dashboard-header">
+        {% comment %} <h1>📊 Tybee Admin Dashboard</h1> {% endcomment %}
+        <h1>Overview of your platform metrics and activity</h1>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="tybee-stats-grid">
+        {% for stat in stats %}
+        <div class="tybee-stat-card">
+            <div class="tybee-stat-icon">
+                {% if stat.icon == "person" %}👤{% elif stat.icon == "map" %}🗺️{% elif stat.icon == "category" %}📂{% elif stat.icon == "person_add" %}🆕{% else %}📊{% endif %}
+            </div>
+            <div class="tybee-stat-value">{{ stat.value }}</div>
+            <div class="tybee-stat-title">{{ stat.title }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Charts -->
+    <div class="tybee-charts-grid">
+        {% for chart in charts %}
+        <div class="tybee-chart-card">
+            <div class="tybee-chart-title">{{ chart.title }}</div>
+            <canvas id="chart-{{ forloop.counter }}" class="tybee-chart-canvas"></canvas>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Latest Users Table -->
+    {% if latest_users %}
+    <div class="tybee-table-card">
+        <div class="tybee-table-title">🧑‍💼 Latest Registered Users</div>
+        <table class="tybee-table">
+            <thead>
+                <tr>
+                    <th>Phone</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Date Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in latest_users %}
+                <tr>
+                    <td>{{ user.phone_number }}</td>
+                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                    <td>{{ user.email|default:"—" }}</td>
+                    <td>{{ user.date_joined|date:"M d, Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Latest Places Table -->
+    {% if latest_places %}
+    <div class="tybee-table-card">
+        <div class="tybee-table-title">📍 Latest Local Places</div>
+        <table class="tybee-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Added</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for place in latest_places %}
+                <tr>
+                    <td>{{ place.name }}</td>
+                    <td>{{ place.created_at|date:"M d, Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartConfigs = [
+        {% for chart in charts %}
+        {
+            id: 'chart-{{ forloop.counter }}',
+            type: '{{ chart.type }}',
+            data: {
+                labels: {{ chart.data.labels|safe }},
+                datasets: [
+                    {% for dataset in chart.data.datasets %}
+                    {
+                        label: '{{ dataset.label }}',
+                        data: {{ dataset.data|safe }},
+                        {% if chart.type == 'bar' %}
+                        backgroundColor: [
+                            'rgba(99, 102, 241, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(251, 146, 60, 0.8)',
+                            'rgba(167, 139, 250, 0.8)',
+                            'rgba(244, 63, 94, 0.8)',
+                            'rgba(56, 189, 248, 0.8)',
+                            'rgba(251, 191, 36, 0.8)',
+                            'rgba(34, 197, 94, 0.8)'
+                        ],
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        {% elif chart.type == 'line' %}
+                        borderColor: '{{ dataset.borderColor|default:"#6366f1" }}',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '{{ dataset.borderColor|default:"#6366f1" }}',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        {% else %}
+                        backgroundColor: '{{ dataset.backgroundColor|default:"#6366f1" }}',
+                        {% endif %}
+                    },
+                    {% endfor %}
+                ]
+            }
+        },
+        {% endfor %}
+    ];
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#d1d5db' : '#6b7280';
+
+    chartConfigs.forEach(function(cfg) {
+        const ctx = document.getElementById(cfg.id);
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: cfg.type,
+            data: cfg.data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                    tooltip: {
+                        backgroundColor: isDark ? '#374151' : '#1f2937',
+                        titleColor: '#f9fafb',
+                        bodyColor: '#e5e7eb',
+                        borderColor: isDark ? '#4b5563' : '#374151',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        padding: 12,
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: { color: textColor, font: { size: 11 } },
+                    },
+                    y: {
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: { color: textColor, font: { size: 11 }, beginAtZero: true },
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart',
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

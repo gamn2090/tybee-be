@@ -12,7 +12,9 @@ IMAGE_FIELDS = ['image', 'image_2', 'image_3', 'image_4', 'image_5']
 
 
 class LocalPlaceSerializer(serializers.ModelSerializer):
-    image = PresignedUrlField()
+    image_presigned = PresignedUrlField(source='image', read_only=True)
+    image_key = serializers.CharField(write_only=True, required=False, allow_null=True)
+    
     image_2 = PresignedUrlField()
     image_3 = PresignedUrlField()
     image_4 = PresignedUrlField()
@@ -81,6 +83,18 @@ class LocalPlaceSerializer(serializers.ModelSerializer):
         }
 
 
+    def update(self, instance, validated_data):
+        image_key = validated_data.pop('image_key', None)
+        if image_key:
+            validated_data['image'] = image_key
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        image_key = validated_data.pop('image_key', None)
+        if image_key:
+            validated_data['image'] = image_key
+        return super().create(validated_data)
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -102,7 +116,21 @@ class TipSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class StaticMapSerializer(serializers.ModelSerializer):
-    image = PresignedUrlField()
+    image_presigned = PresignedUrlField(source='image', read_only=True)
+    image_key = serializers.CharField(write_only=True, required=False, allow_null=True)
+
     class Meta:
         model = StaticMap
         fields = '__all__'
+
+    def update(self, instance, validated_data):
+        image_key = validated_data.pop('image_key', None)
+        if image_key:
+            validated_data['image'] = image_key
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        image_key = validated_data.pop('image_key', None)
+        if image_key:
+            validated_data['image'] = image_key
+        return super().create(validated_data)

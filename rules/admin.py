@@ -14,6 +14,10 @@ class RuleCategoryAdmin(ModelAdmin):
 
 @admin.register(Rule)
 class RuleAdmin(ModelAdmin):
-	list_display = ('category', 'title', 'is_active', 'created_at')
+	list_display = ('category', 'title', 'description_truncated', 'is_active', 'created_at')
 	search_fields = ('title', 'category__name')
 	list_filter = ('category', 'is_active')
+
+	def description_truncated(self, obj):
+		return obj.description[:100] + "..." if obj.description and len(obj.description) > 100 else obj.description
+	description_truncated.short_description = 'Description'

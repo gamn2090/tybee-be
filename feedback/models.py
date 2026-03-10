@@ -18,6 +18,10 @@ class UserFeedback(models.Model):
 	def __str__(self):
 		return f"App Feedback - {self.user}"
 
+	class Meta:
+		verbose_name = 'User Feedback'
+		verbose_name_plural = 'User Feedback'
+
 # Help Request
 class HelpRequest(models.Model):
 	STATUS_CHOICES = [
@@ -32,6 +36,10 @@ class HelpRequest(models.Model):
 	admin_notes = models.TextField(blank=True, null=True)
 	def __str__(self):
 		return f"Help Request - {self.user}"
+
+	class Meta:
+		verbose_name = 'Help Request'
+		verbose_name_plural = 'Help Requests'
 
 # Report a Problem
 class ReportProblem(models.Model):
@@ -48,6 +56,10 @@ class ReportProblem(models.Model):
 	def __str__(self):
 		return f"Report Problem - {self.user}"
 
+	class Meta:
+		verbose_name = 'Reported Problem'
+		verbose_name_plural = 'Reported Problems'
+
 # Contact Us
 class ContactUs(models.Model):
 	STATUS_CHOICES = [
@@ -62,3 +74,7 @@ class ContactUs(models.Model):
 	admin_notes = models.TextField(blank=True, null=True)
 	def __str__(self):
 		return f"Contact Us - {self.user}"
+
+	class Meta:
+		verbose_name = 'Contact Us'
+		verbose_name_plural = 'Contact Us Requests'
