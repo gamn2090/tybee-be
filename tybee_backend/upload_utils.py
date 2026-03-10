@@ -12,7 +12,6 @@ import boto3
 from botocore.config import Config
 from django.conf import settings
 
-
 # ── Constants ────────────────────────────────────────────────────────────────
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
@@ -37,6 +36,7 @@ PRESIGNED_URL_EXPIRY = 300  # 5 minutes
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+
 
 def _get_s3_client():
     """Return a boto3 S3 client configured from Django settings."""

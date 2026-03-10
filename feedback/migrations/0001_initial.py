@@ -7,19 +7,48 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='UserFeedback',
+            name="UserFeedback",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('feedback_type', models.CharField(choices=[('app_feedback', 'App Feedback'), ('help_request', 'Help Request'), ('report_problem', 'Report a Problem'), ('contact_us', 'Contact Us')], max_length=20)),
-                ('message', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('status', models.CharField(choices=[('new', 'New'), ('reviewed', 'Reviewed'), ('resolved', 'Resolved')], default='new', max_length=20)),
-                ('admin_notes', models.TextField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "feedback_type",
+                    models.CharField(
+                        choices=[
+                            ("app_feedback", "App Feedback"),
+                            ("help_request", "Help Request"),
+                            ("report_problem", "Report a Problem"),
+                            ("contact_us", "Contact Us"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("message", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("new", "New"),
+                            ("reviewed", "Reviewed"),
+                            ("resolved", "Resolved"),
+                        ],
+                        default="new",
+                        max_length=20,
+                    ),
+                ),
+                ("admin_notes", models.TextField(blank=True, null=True)),
             ],
         ),
     ]

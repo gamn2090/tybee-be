@@ -7,18 +7,35 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='LegalDocument',
+            name="LegalDocument",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(choices=[('privacy_policy', 'Privacy Policy'), ('terms_of_service', 'Terms of Service')], max_length=32, unique=True)),
-                ('content', models.TextField()),
-                ('last_updated', models.DateTimeField(auto_now=True)),
-                ('is_active', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        choices=[
+                            ("privacy_policy", "Privacy Policy"),
+                            ("terms_of_service", "Terms of Service"),
+                        ],
+                        max_length=32,
+                        unique=True,
+                    ),
+                ),
+                ("content", models.TextField()),
+                ("last_updated", models.DateTimeField(auto_now=True)),
+                ("is_active", models.BooleanField(default=True)),
             ],
         ),
     ]

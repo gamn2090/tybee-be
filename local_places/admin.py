@@ -1,8 +1,15 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
-from .models import LocalPlace, StaticMap, Category, Tag, Activity, Tip
-from unfold.admin import ModelAdmin
+from .models import LocalPlace, StaticMap, Category, Tag, Activity, Tip, OperatingHours
+from unfold.admin import ModelAdmin, TabularInline
+
+
+class OperatingHoursInline(TabularInline):
+    model = OperatingHours
+    extra = 0
+    fields = ("day_of_week", "open_time", "close_time", "is_closed")
+    ordering = ("day_of_week",)
 
 
 @admin.register(LocalPlace)
@@ -11,21 +18,16 @@ class LocalPlaceAdmin(ModelAdmin, ImportExportModelAdmin):
         "name",
         "category",
         "popularity_score",
-        "description_truncated",
+        "review_count",
+        "address",
+        "website_url",
+        "contact_number",
         "is_active",
         "created_at",
     )
     search_fields = ("name",)
     list_filter = ("category", "is_active")
-
-    def description_truncated(self, obj):
-        return (
-            obj.description[:100] + "..."
-            if obj.description and len(obj.description) > 100
-            else obj.description
-        )
-
-    description_truncated.short_description = "Description"
+    inlines = [OperatingHoursInline]
 
 
 @admin.register(Category)
