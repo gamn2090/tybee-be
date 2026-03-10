@@ -96,8 +96,6 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "https://api.tybeego.com",
-    "https://isidioid-katharine-histopathological.ngrok-free.dev",
-    "https://multilobate-tactical-chantel.ngrok-free.dev",
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
