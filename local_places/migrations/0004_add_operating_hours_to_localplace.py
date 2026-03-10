@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0003_add_address_to_localplace'),
+        ("local_places", "0003_add_address_to_localplace"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='localplace',
-            name='operating_hours',
-            field=models.JSONField(blank=True, default=dict, help_text='Weekly schedule. Example: {"monday": {"open": "08:00", "close": "20:00", "is_closed": false}, "tuesday": {"open": "09:00", "close": "18:00", "is_closed": false}, "sunday": {"open": null, "close": null, "is_closed": true}}'),
+            model_name="localplace",
+            name="operating_hours",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text='Weekly schedule. Example: {"monday": {"open": "08:00", "close": "20:00", "is_closed": false}, "tuesday": {"open": "09:00", "close": "18:00", "is_closed": false}, "sunday": {"open": null, "close": null, "is_closed": true}}',
+            ),
         ),
     ]

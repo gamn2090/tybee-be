@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0001_initial'),
+        ("local_places", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='localplace',
-            name='contact_number',
+            model_name="localplace",
+            name="contact_number",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='localplace',
-            name='web_domain',
+            model_name="localplace",
+            name="web_domain",
             field=models.URLField(blank=True),
         ),
     ]

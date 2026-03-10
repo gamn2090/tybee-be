@@ -6,17 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0002_remove_user_social_provider_user_profile_pic_and_more'),
+        ("users", "0002_remove_user_social_provider_user_profile_pic_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='signupOTP',
+            name="signupOTP",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('otp_code', models.CharField(max_length=10)),
-                ('expires_at', models.DateTimeField()),
-                ('is_used', models.BooleanField(default=False)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("otp_code", models.CharField(max_length=10)),
+                ("expires_at", models.DateTimeField()),
+                ("is_used", models.BooleanField(default=False)),
             ],
         ),
     ]

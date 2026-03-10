@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0004_add_operating_hours_to_localplace'),
+        ("local_places", "0004_add_operating_hours_to_localplace"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='localplace',
-            name='review_count',
+            model_name="localplace",
+            name="review_count",
             field=models.IntegerField(default=0),
         ),
     ]

@@ -7,13 +7,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0005_add_review_count_to_localplace'),
+        ("local_places", "0005_add_review_count_to_localplace"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='localplace',
-            name='popularity_score',
-            field=models.DecimalField(decimal_places=1, default=0.0, max_digits=3, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(5)]),
+            model_name="localplace",
+            name="popularity_score",
+            field=models.DecimalField(
+                decimal_places=1,
+                default=0.0,
+                max_digits=3,
+                validators=[
+                    django.core.validators.MinValueValidator(0),
+                    django.core.validators.MaxValueValidator(5),
+                ],
+            ),
         ),
     ]

@@ -6,31 +6,31 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0007_add_localplaceimage_model'),
+        ("local_places", "0007_add_localplaceimage_model"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='localplace',
-            name='image_2',
-            field=models.ImageField(blank=True, null=True, upload_to='local_places/'),
+            model_name="localplace",
+            name="image_2",
+            field=models.ImageField(blank=True, null=True, upload_to="local_places/"),
         ),
         migrations.AddField(
-            model_name='localplace',
-            name='image_3',
-            field=models.ImageField(blank=True, null=True, upload_to='local_places/'),
+            model_name="localplace",
+            name="image_3",
+            field=models.ImageField(blank=True, null=True, upload_to="local_places/"),
         ),
         migrations.AddField(
-            model_name='localplace',
-            name='image_4',
-            field=models.ImageField(blank=True, null=True, upload_to='local_places/'),
+            model_name="localplace",
+            name="image_4",
+            field=models.ImageField(blank=True, null=True, upload_to="local_places/"),
         ),
         migrations.AddField(
-            model_name='localplace',
-            name='image_5',
-            field=models.ImageField(blank=True, null=True, upload_to='local_places/'),
+            model_name="localplace",
+            name="image_5",
+            field=models.ImageField(blank=True, null=True, upload_to="local_places/"),
         ),
         migrations.DeleteModel(
-            name='LocalPlaceImage',
+            name="LocalPlaceImage",
         ),
     ]

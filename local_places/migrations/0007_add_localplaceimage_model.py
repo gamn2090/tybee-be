@@ -7,20 +7,40 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0006_change_popularity_score_to_decimal'),
+        ("local_places", "0006_change_popularity_score_to_decimal"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='LocalPlaceImage',
+            name="LocalPlaceImage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.ImageField(upload_to='local_places/gallery/')),
-                ('order', models.PositiveIntegerField(default=0, help_text='Lower number appears first in the slider')),
-                ('local_place', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='local_places.localplace')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("image", models.ImageField(upload_to="local_places/gallery/")),
+                (
+                    "order",
+                    models.PositiveIntegerField(
+                        default=0, help_text="Lower number appears first in the slider"
+                    ),
+                ),
+                (
+                    "local_place",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="local_places.localplace",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['order'],
+                "ordering": ["order"],
             },
         ),
     ]

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0002_add_web_domain_contact_number_to_localplace'),
+        ("local_places", "0002_add_web_domain_contact_number_to_localplace"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='localplace',
-            name='address',
+            model_name="localplace",
+            name="address",
             field=models.TextField(blank=True),
         ),
     ]
