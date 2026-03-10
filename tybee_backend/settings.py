@@ -15,8 +15,8 @@ from django.utils.translation import gettext_lazy as _
 from tybee_backend.admin.navigation import NAVIGATION
 
 UNFOLD = {
-    "SITE_TITLE": "Tybee Admin Dashboard",
-    "SITE_HEADER": "Tybee Admin Dashboard",
+    "SITE_TITLE": "Tybee Admin",
+    "SITE_HEADER": "Tybee Admin",
     "SITE_SYMBOL": "travel_explore",
     "DASHBOARD_CALLBACK": "tybee_backend.admin.dashboard.dashboard_callback",
     "LOGIN": {
