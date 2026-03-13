@@ -5,8 +5,8 @@ from django.contrib.auth.models import (
     PermissionsMixin,
     BaseUserManager,
 )
-from django.core.validators import FileExtensionValidator
 from django.utils import timezone
+from tybee_backend.validators import validate_image_size, validate_image_extension
 
 
 class UserManager(BaseUserManager):
@@ -29,11 +29,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         upload_to="profile_pics/",
         blank=True,
         null=True,
-        validators=[
-            FileExtensionValidator(
-                allowed_extensions=["jpg", "jpeg", "png", "webp", "gif"]
-            )
-        ],
+        validators=[validate_image_extension, validate_image_size],
     )
     first_name = models.CharField(max_length=60)
     last_name = models.CharField(max_length=60)
