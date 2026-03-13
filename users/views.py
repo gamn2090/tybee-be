@@ -19,6 +19,7 @@ import random
 import string
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from .utils import send_sms_otp
 
 
 @extend_schema(tags=["Password & OTP"])
@@ -36,15 +37,17 @@ class ForgotPasswordView(generics.GenericAPIView):
             return Response(
                 {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
             )
-        # Generate OTP
-        # otp_code = ''.join(random.choices(string.digits, k=6))  # Random OTP (commented for prefixed OTP)
-        otp_code = "123456"  # Prefixed OTP for initial forgot-password request
+        # Generate random OTP
+        otp_code = "".join(random.choices(string.digits, k=6))
         expires_at = timezone.now() + timezone.timedelta(minutes=10)
         PasswordResetOTP.objects.create(
             user=user, otp_code=otp_code, expires_at=expires_at
         )
-        # Placeholder for phone OTP integration
-        # TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+
+        # Send OTP via Twilio
+        custom_message = f"Your Tybee password reset code is: {otp_code}"
+        send_sms_otp(phone_number, otp_code, custom_message)
+
         print(f"[DEBUG] OTP for {phone_number}: {otp_code}")
         return Response({"detail": "OTP sent to phone number.", "OTP": otp_code})
 
@@ -140,12 +143,17 @@ class SendOTPView(generics.GenericAPIView):
                 {"detail": "User with phone number already exists."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        # Generate OTP
-        # otp_code = ''.join(random.choices(string.digits, k=6))  # Random OTP (commented for prefixed OTP)
-        otp_code = "123456"  # Prefixed OTP for initial signup request
+        # Generate random OTP
+        otp_code = "".join(random.choices(string.digits, k=6))
         expires_at = timezone.now() + timezone.timedelta(minutes=10)
-        signupOTP.objects.create(otp_code=otp_code, expires_at=expires_at)
-        # TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+        signupOTP.objects.create(
+            phone_number=phone_number, otp_code=otp_code, expires_at=expires_at
+        )
+
+        # Send OTP via Twilio
+        custom_message = f"Your Tybee signup verification code is: {otp_code}"
+        send_sms_otp(phone_number, otp_code, custom_message)
+
         print(f"[DEBUG] OTP for {phone_number}: {otp_code}")
 
         return Response({"detail": "OTP sent to phone number.", "OTP": otp_code})
@@ -169,9 +177,8 @@ class ResendOTPView(generics.GenericAPIView):
         phone_number = serializer.validated_data.get("phone_number")
         otp_type = serializer.validated_data.get("type")
 
-        # Resend OTP (prefixed)
-        # otp_code = ''.join(random.choices(string.digits, k=6))  # Random OTP (commented for prefixed OTP)
-        otp_code = "654321"  # Prefixed OTP for resend
+        # Resend OTP
+        otp_code = "".join(random.choices(string.digits, k=6))
         expires_at = timezone.now() + timezone.timedelta(minutes=10)
 
         if otp_type == "signup":
@@ -203,7 +210,11 @@ class ResendOTPView(generics.GenericAPIView):
                 user=user, otp_code=otp_code, expires_at=expires_at
             )
 
-        # TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+        # Send OTP via Twilio
+        flow_name = "signup" if otp_type == "signup" else "password reset"
+        custom_message = f"Your requested Tybee {flow_name} code is: {otp_code}"
+        send_sms_otp(phone_number, otp_code, custom_message)
+
         print(f"[DEBUG] Resend OTP ({otp_type}) for {phone_number}: {otp_code}")
         return Response({"detail": "OTP resent to phone number.", "OTP": otp_code})
 
@@ -221,14 +232,17 @@ class SignupView(generics.GenericAPIView):
         # Create the user as inactive
         user = serializer.save()
 
-        # Generate and store OTP for this phone number
-        # otp_code = ''.join(random.choices(string.digits, k=6))  # Random OTP (commented for prefixed OTP)
-        otp_code = "123456"  # Prefixed OTP for signup
+        # Generate random and store OTP for this phone number
+        otp_code = "".join(random.choices(string.digits, k=6))
         expires_at = timezone.now() + timezone.timedelta(minutes=10)
         signupOTP.objects.create(
             phone_number=phone_number, otp_code=otp_code, expires_at=expires_at
         )
-        # TODO: Integrate with actual phone OTP service (e.g., Twilio, MSG91, etc.)
+
+        # Send OTP via Twilio
+        custom_message = f"Your Tybee signup verification code is: {otp_code}"
+        send_sms_otp(phone_number, otp_code, custom_message)
+
         print(f"[DEBUG] Signup OTP for {phone_number}: {otp_code}")
 
         return Response(
