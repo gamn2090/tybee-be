@@ -4,7 +4,7 @@ from users.serializers import PresignedUrlField
 from datetime import datetime
 import pytz
 
-IMAGE_FIELDS = ["image", "image_2", "image_3", "image_4", "image_5"]
+
 
 DAY_NAMES = [
     "monday",
@@ -33,12 +33,8 @@ class OperatingHoursSerializer(serializers.ModelSerializer):
 
 
 class LocalPlaceSerializer(serializers.ModelSerializer):
-    image_presigned = PresignedUrlField(source="image", read_only=True)
-    image_key = serializers.CharField(write_only=True, required=False, allow_null=True)
-    image_2 = PresignedUrlField()
-    image_3 = PresignedUrlField()
-    image_4 = PresignedUrlField()
-    image_5 = PresignedUrlField()
+    image_presigned = serializers.SerializerMethodField()
+    gallery_images = serializers.SerializerMethodField()
     gallery_images = serializers.SerializerMethodField()
     operating_hours = serializers.SerializerMethodField()
     is_open_now = serializers.SerializerMethodField()
@@ -82,14 +78,20 @@ class LocalPlaceSerializer(serializers.ModelSerializer):
             )
         return result
 
+    def get_image_presigned(self, obj):
+        first_image = obj.images.order_by("order", "id").first()
+        if first_image and first_image.image:
+            pf = PresignedUrlField()
+            return pf.to_representation(first_image.image)
+        return None
+
     def get_gallery_images(self, obj):
-        """Return a list of pre-signed URLs for all non-empty image fields."""
+        """Return a list of pre-signed URLs for all dynamic images."""
         results = []
-        for field_name in IMAGE_FIELDS:
-            field = getattr(obj, field_name)
-            if field:
+        for image_obj in obj.images.order_by("order", "id"):
+            if image_obj.image:
                 pf = PresignedUrlField()
-                url = pf.to_representation(field)
+                url = pf.to_representation(image_obj.image)
                 if url:
                     results.append(url)
         return results
@@ -132,15 +134,9 @@ class LocalPlaceSerializer(serializers.ModelSerializer):
         }
 
     def update(self, instance, validated_data):
-        image_key = validated_data.pop("image_key", None)
-        if image_key:
-            validated_data["image"] = image_key
         return super().update(instance, validated_data)
 
     def create(self, validated_data):
-        image_key = validated_data.pop("image_key", None)
-        if image_key:
-            validated_data["image"] = image_key
         return super().create(validated_data)
 
 

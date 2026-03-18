@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
-from .models import LocalPlace, StaticMap, Category, Tag, Activity, Tip, OperatingHours
+from .models import LocalPlace, LocalPlaceImage, StaticMap, Category, Tag, Activity, Tip, OperatingHours
 from unfold.admin import ModelAdmin, TabularInline
 
 
@@ -44,8 +44,41 @@ class OperatingHoursInline(TabularInline):
     ordering = ("day_of_week",)
 
 
+class LocalPlaceImageInline(TabularInline):
+    model = LocalPlaceImage
+    extra = 0
+    min_num = 1
+    validate_min = True
+    max_num = 10
+    fields = ("image", "order")
+    ordering = ("order", "id")
+
+
+class LocalPlaceAdminForm(forms.ModelForm):
+    class Meta:
+        model = LocalPlace
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        readonly_fields = [
+            "latitude",
+            "longitude",
+            "google_places_id",
+            "google_places_link",
+            "website_url",
+            "contact_number",
+            "popularity_score",
+            "review_count",
+        ]
+        for field in readonly_fields:
+            if field in self.fields:
+                self.fields[field].widget.attrs["readonly"] = True 
+                self.fields[field].widget.attrs["style"] = "pointer-events: none; opacity: 0.7;"
+
 @admin.register(LocalPlace)
 class LocalPlaceAdmin(ModelAdmin, ImportExportModelAdmin):
+    form = LocalPlaceAdminForm
     list_display = (
         "name",
         "category",
@@ -59,7 +92,36 @@ class LocalPlaceAdmin(ModelAdmin, ImportExportModelAdmin):
     )
     search_fields = ("name",)
     list_filter = ("category", "is_active")
-    inlines = [OperatingHoursInline]
+    fieldsets = (
+        (
+            "General Information",
+            {"fields": ("name", "category", "highlight", "description", "is_active")},
+        ),
+        (
+            "Location & Map Details",
+            {"fields": ("address", "latitude", "longitude")},
+        ),
+        (
+            "Google & External Links",
+            {
+                "fields": (
+                    "google_places_id",
+                    "google_places_link",
+                    "website_url",
+                    "contact_number",
+                )
+            },
+        ),
+        (
+            "Popularity & Reviews",
+            {"fields": ("popularity_score", "review_count")},
+        ),
+        (
+            "Grouping & Metadata",
+            {"fields": ("tags", "activities", "tips")},
+        ),
+    )
+    inlines = [LocalPlaceImageInline, OperatingHoursInline]
 
     @property
     def media(self):
