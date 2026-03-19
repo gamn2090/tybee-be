@@ -27,7 +27,6 @@ function attachAutocomplete(input) {
         // Request every available field so we can fill all admin inputs
         fields: [
             "place_id",
-            "name",
             "formatted_address",
             "geometry",
             "url",
@@ -49,6 +48,9 @@ function attachAutocomplete(input) {
     });
 
     autocomplete.addListener("place_changed", function () {
+        var nameField = document.getElementById("id_name");
+        var originalName = nameField ? nameField.value : "";
+
         var place = autocomplete.getPlace();
         if (!place || !place.geometry) return;
 
@@ -66,7 +68,7 @@ function attachAutocomplete(input) {
         setField("id_google_places_link", place.url || "");
 
         // ── Business details ──────────────────────────────────────────────
-        if (place.name) setField("id_name", place.name);
+        // if (place.name) setField("id_name", place.name);
         if (place.website) setField("id_website_url", place.website);
         if (place.formatted_phone_number) {
             setField("id_contact_number", place.formatted_phone_number);
@@ -82,14 +84,33 @@ function attachAutocomplete(input) {
             setField("id_review_count", place.user_ratings_total);
         }
 
+        // Aggressively restore the original name for 500ms to beat any delayed browser autofill
+        if (nameField && originalName) {
+            var counter = 0;
+            var restoreInterval = setInterval(function () {
+                if (nameField.value !== originalName) {
+                    console.log("[Places] Overwriting detected! Restoring:", originalName);
+                    nameField.value = originalName;
+                }
+                counter++;
+                if (counter > 50) clearInterval(restoreInterval); // Stop after 500ms (10ms * 50)
+            }, 10);
+        }
+
         console.log("[Places] Filled fields from:", place.name, place);
     });
 }
 
 /** Helper: set value on a form field if it exists and fire change events. */
 function setField(id, value) {
+    if (id === "id_name") {
+        console.log("[Places] Skipping id_name to prevent overwrite.");
+        return;
+    }
+
     var el = document.getElementById(id);
     if (el && value !== undefined && value !== null) {
+        console.log("[Places] Setting field:", id, "to:", value);
         el.value = value;
         el.dispatchEvent(new Event("input", { bubbles: true }));
         el.dispatchEvent(new Event("change", { bubbles: true }));

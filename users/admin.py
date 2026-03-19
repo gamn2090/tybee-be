@@ -13,6 +13,30 @@ class UserAdmin(ModelAdmin):
         "profile_pic_preview_list",
     )
     readonly_fields = ("profile_pic_preview",)
+    fieldsets = [
+        (
+            None,
+            {
+                "fields": (
+                    "profile_pic",
+                    "profile_pic_preview",
+                    "first_name",
+                    "last_name",
+                    "phone_number",
+                    "zipcode",
+                )
+            },
+        ),
+        # Hidden/Unused technical fields
+        # (
+        #     "Permissions",
+        #     {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")},
+        # ),
+        # (
+        #     "Important dates",
+        #     {"fields": ("last_login", "date_joined")},
+        # ),
+    ]
 
     def profile_pic_preview(self, obj):
         if obj.profile_pic:
@@ -38,7 +62,7 @@ class UserAdmin(ModelAdmin):
 
     full_name.short_description = "Name"
 
-    search_fields = ("phone_number", "first_name", "last_name", "email")
+    search_fields = ("phone_number", "first_name", "last_name")
     list_filter = ("is_active", "is_staff", "is_superuser")
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
