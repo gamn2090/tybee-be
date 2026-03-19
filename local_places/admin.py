@@ -297,7 +297,7 @@ class CartMapAdmin(ModelAdmin):
     ]
 
     class Media:
-        js = ("local_places/js/cart_map_admin.js?v=2",)
+        js = ("local_places/js/cart_map_admin.js",)
 
     def image_preview(self, obj):
         if obj.image:
