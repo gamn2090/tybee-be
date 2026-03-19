@@ -11,11 +11,12 @@ NAVIGATION = [
                 "icon": "person",
                 "link": reverse_lazy("admin:users_user_changelist"),
             },
-            {
-                "title": _("Password Reset OTPs"),
-                "icon": "lock_reset",
-                "link": reverse_lazy("admin:users_passwordresetotp_changelist"),
-            },
+            # Password Reset OTPs hidden as requested
+            # {
+            #     "title": _("Password Reset OTPs"),
+            #     "icon": "lock_reset",
+            #     "link": reverse_lazy("admin:users_passwordresetotp_changelist"),
+            # },
         ],
     },
     {
@@ -43,14 +44,14 @@ NAVIGATION = [
                 "link": reverse_lazy("admin:local_places_activity_changelist"),
             },
             {
-                "title": _("Tips"),
+                "title": _("Live Like a Local"),
                 "icon": "tips_and_updates",
-                "link": reverse_lazy("admin:local_places_tip_changelist"),
+                "link": reverse_lazy("admin:local_places_livelikealocal_changelist"),
             },
             {
-                "title": _("Static Maps"),
+                "title": _("Cart Maps"),
                 "icon": "map",
-                "link": reverse_lazy("admin:local_places_staticmap_changelist"),
+                "link": reverse_lazy("admin:local_places_cartmap_changelist"),
             },
         ],
     },

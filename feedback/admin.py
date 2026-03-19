@@ -3,40 +3,82 @@ from .models import UserFeedback, HelpRequest, ReportProblem, ContactUs
 from unfold.admin import ModelAdmin
 
 
-class ReadOnlyAdmin(ModelAdmin):
+class BaseFeedbackAdmin(ModelAdmin):
     def has_add_permission(self, request):
         return False
 
     def has_change_permission(self, request, obj=None):
-        return False
+        return True
 
     def has_delete_permission(self, request, obj=None):
         return False
 
+    readonly_fields = ("user", "message", "created_at")
+
 
 @admin.register(UserFeedback)
-class UserFeedbackAdmin(ReadOnlyAdmin):
-    list_display = ("user", "status", "created_at")
-    search_fields = ("user__email", "status")
-    list_filter = ("status",)
+class UserFeedbackAdmin(BaseFeedbackAdmin):
+    list_display = ("user", "message_truncated", "status", "created_at")
+    list_editable = ("status",)
+    search_fields = ("user__email", "status", "message", "admin_notes")
+    list_filter = ("status", "created_at")
+
+    def message_truncated(self, obj):
+        return (
+            obj.message[:50] + "..."
+            if obj.message and len(obj.message) > 50
+            else obj.message
+        )
+
+    message_truncated.short_description = "Message"
 
 
 @admin.register(HelpRequest)
-class HelpRequestAdmin(ReadOnlyAdmin):
-    list_display = ("user", "status", "created_at")
-    search_fields = ("user__email", "status")
-    list_filter = ("status",)
+class HelpRequestAdmin(BaseFeedbackAdmin):
+    list_display = ("user", "message_truncated", "status", "created_at")
+    list_editable = ("status",)
+    search_fields = ("user__email", "status", "message", "admin_notes")
+    list_filter = ("status", "created_at")
+
+    def message_truncated(self, obj):
+        return (
+            obj.message[:50] + "..."
+            if obj.message and len(obj.message) > 50
+            else obj.message
+        )
+
+    message_truncated.short_description = "Message"
 
 
 @admin.register(ReportProblem)
-class ReportProblemAdmin(ReadOnlyAdmin):
-    list_display = ("user", "status", "created_at")
-    search_fields = ("user__email", "status")
-    list_filter = ("status",)
+class ReportProblemAdmin(BaseFeedbackAdmin):
+    list_display = ("user", "message_truncated", "status", "created_at")
+    list_editable = ("status",)
+    search_fields = ("user__email", "status", "message", "admin_notes")
+    list_filter = ("status", "created_at")
+
+    def message_truncated(self, obj):
+        return (
+            obj.message[:50] + "..."
+            if obj.message and len(obj.message) > 50
+            else obj.message
+        )
+
+    message_truncated.short_description = "Message"
 
 
 @admin.register(ContactUs)
-class ContactUsAdmin(ReadOnlyAdmin):
-    list_display = ("user", "status", "created_at")
-    search_fields = ("user__email", "status")
-    list_filter = ("status",)
+class ContactUsAdmin(BaseFeedbackAdmin):
+    list_display = ("user", "message_truncated", "status", "created_at")
+    list_editable = ("status",)
+    search_fields = ("user__email", "status", "message", "admin_notes")
+    list_filter = ("status", "created_at")
+
+    def message_truncated(self, obj):
+        return (
+            obj.message[:50] + "..."
+            if obj.message and len(obj.message) > 50
+            else obj.message
+        )
+
+    message_truncated.short_description = "Message"

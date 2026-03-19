@@ -3,8 +3,18 @@ from django.contrib import admin
 from django.conf import settings
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
-from .models import LocalPlace, LocalPlaceImage, StaticMap, Category, Tag, Activity, Tip, OperatingHours
+from .models import (
+    LocalPlace,
+    LocalPlaceImage,
+    CartMap,
+    Category,
+    Tag,
+    Activity,
+    LiveLikeALocal,
+    OperatingHours,
+)
 from unfold.admin import ModelAdmin, TabularInline
+from unfold.widgets import UnfoldAdminTimeWidget
 
 
 from django.core.exceptions import ValidationError
@@ -35,7 +45,31 @@ class OperatingHoursFormSet(forms.models.BaseInlineFormSet):
             selected_days.append(day)
 
 
+class OperatingHoursForm(forms.ModelForm):
+    class Meta:
+        model = OperatingHours
+        fields = "__all__"
+        widgets = {
+            "open_time": UnfoldAdminTimeWidget(
+                attrs={"type": "time", "placeholder": "HH:MM AM/PM"},
+            ),
+            "close_time": UnfoldAdminTimeWidget(
+                attrs={"type": "time", "placeholder": "HH:MM AM/PM"},
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["open_time"].help_text = (
+            "Click the clock icon or enter time (e.g., 09:00 AM)"
+        )
+        self.fields["close_time"].help_text = (
+            "Click the clock icon or enter time (e.g., 05:00 PM)"
+        )
+
+
 class OperatingHoursInline(TabularInline):
+    form = OperatingHoursForm
     model = OperatingHours
     formset = OperatingHoursFormSet
     extra = 0
@@ -50,8 +84,27 @@ class LocalPlaceImageInline(TabularInline):
     min_num = 1
     validate_min = True
     max_num = 10
-    fields = ("image", "order")
+    fields = ("image", "image_preview", "order")
+    readonly_fields = ("image_preview",)
     ordering = ("order", "id")
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 150px; width: auto; border-radius: 8px;" />',
+                obj.image.url,
+            )
+        return "No image uploaded"
+
+    image_preview.short_description = "Preview"
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == "image":
+            formfield.widget.attrs.update(
+                {"accept": ".jpg, .jpeg, .png, .webp, .heic, .heif"}
+            )
+        return formfield
 
 
 class LocalPlaceAdminForm(forms.ModelForm):
@@ -73,8 +126,11 @@ class LocalPlaceAdminForm(forms.ModelForm):
         ]
         for field in readonly_fields:
             if field in self.fields:
-                self.fields[field].widget.attrs["readonly"] = True 
-                self.fields[field].widget.attrs["style"] = "pointer-events: none; opacity: 0.7;"
+                self.fields[field].widget.attrs["readonly"] = True
+                self.fields[field].widget.attrs[
+                    "style"
+                ] = "pointer-events: none; opacity: 0.7;"
+
 
 @admin.register(LocalPlace)
 class LocalPlaceAdmin(ModelAdmin, ImportExportModelAdmin):
@@ -95,7 +151,7 @@ class LocalPlaceAdmin(ModelAdmin, ImportExportModelAdmin):
     fieldsets = (
         (
             "General Information",
-            {"fields": ("name", "category", "highlight", "description", "is_active")},
+            {"fields": ("name", "category", "description", "is_active")},
         ),
         (
             "Location & Map Details",
@@ -118,7 +174,7 @@ class LocalPlaceAdmin(ModelAdmin, ImportExportModelAdmin):
         ),
         (
             "Grouping & Metadata",
-            {"fields": ("tags", "activities", "tips")},
+            {"fields": ("tags", "activities", "live_like_a_local")},
         ),
     )
     inlines = [LocalPlaceImageInline, OperatingHoursInline]
@@ -171,8 +227,8 @@ class ActivityAdmin(ModelAdmin, ImportExportModelAdmin):
     description_truncated.short_description = "Description"
 
 
-@admin.register(Tip)
-class TipAdmin(ModelAdmin, ImportExportModelAdmin):
+@admin.register(LiveLikeALocal)
+class LiveLikeALocalAdmin(ModelAdmin, ImportExportModelAdmin):
     list_display = ("name", "description_truncated")
     search_fields = ("name",)
 
@@ -186,10 +242,55 @@ class TipAdmin(ModelAdmin, ImportExportModelAdmin):
     description_truncated.short_description = "Description"
 
 
-@admin.register(StaticMap)
-class StaticMapAdmin(ModelAdmin, ImportExportModelAdmin):
-    list_display = ("title", "description_truncated", "created_at", "updated_at")
+@admin.register(CartMap)
+class CartMapAdmin(ModelAdmin, ImportExportModelAdmin):
+    list_display = ("title", "image_preview_list", "pdf_preview_list", "created_at")
+    readonly_fields = ("image_preview", "pdf_preview")
     search_fields = ("title",)
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 200px; width: auto; border-radius: 8px;" />',
+                obj.image.url,
+            )
+        return "No image uploaded"
+
+    def pdf_preview(self, obj):
+        if obj.pdf:
+            return format_html(
+                '<a href="{}" target="_blank" style="color: #3b82f6; text-decoration: underline;">View PDF</a>',
+                obj.pdf.url,
+            )
+        return "No PDF uploaded"
+
+    def image_preview_list(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 50px; width: auto; border-radius: 4px;" />',
+                obj.image.url,
+            )
+        return "-"
+
+    def pdf_preview_list(self, obj):
+        if obj.pdf:
+            return format_html('<span style="color: #10b981;">PDF Available</span>')
+        return "-"
+
+    image_preview.short_description = "Image Preview"
+    pdf_preview.short_description = "PDF Preview"
+    image_preview_list.short_description = "Image"
+    pdf_preview_list.short_description = "PDF"
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == "image":
+            formfield.widget.attrs.update(
+                {"accept": ".jpg, .jpeg, .png, .webp, .heic, .heif"}
+            )
+        elif db_field.name == "pdf":
+            formfield.widget.attrs.update({"accept": ".pdf"})
+        return formfield
 
     def description_truncated(self, obj):
         return (
@@ -199,3 +300,6 @@ class StaticMapAdmin(ModelAdmin, ImportExportModelAdmin):
         )
 
     description_truncated.short_description = "Description"
+
+
+# Trigger reload

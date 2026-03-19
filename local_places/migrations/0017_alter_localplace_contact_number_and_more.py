@@ -7,48 +7,61 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0016_remove_localplace_image_remove_localplace_image_2_and_more'),
+        (
+            "local_places",
+            "0016_remove_localplace_image_remove_localplace_image_2_and_more",
+        ),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='localplace',
-            name='contact_number',
+            model_name="localplace",
+            name="contact_number",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AlterField(
-            model_name='localplace',
-            name='google_places_id',
+            model_name="localplace",
+            name="google_places_id",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='localplace',
-            name='google_places_link',
+            model_name="localplace",
+            name="google_places_link",
             field=models.URLField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='localplace',
-            name='latitude',
+            model_name="localplace",
+            name="latitude",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='localplace',
-            name='longitude',
+            model_name="localplace",
+            name="longitude",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='localplace',
-            name='popularity_score',
-            field=models.DecimalField(blank=True, decimal_places=1, default=0.0, max_digits=3, null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(5)]),
+            model_name="localplace",
+            name="popularity_score",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=1,
+                default=0.0,
+                max_digits=3,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(0),
+                    django.core.validators.MaxValueValidator(5),
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='localplace',
-            name='review_count',
+            model_name="localplace",
+            name="review_count",
             field=models.IntegerField(blank=True, default=0, null=True),
         ),
         migrations.AlterField(
-            model_name='localplace',
-            name='website_url',
+            model_name="localplace",
+            name="website_url",
             field=models.URLField(blank=True, null=True),
         ),
     ]
