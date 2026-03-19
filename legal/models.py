@@ -1,4 +1,5 @@
 from django.db import models
+from django_ckeditor_5.fields import CKEditor5Field
 
 
 class LegalDocument(models.Model):
@@ -7,7 +8,7 @@ class LegalDocument(models.Model):
         ("terms_of_service", "Terms of Service"),
     ]
     title = models.CharField(max_length=32, choices=TITLE_CHOICES, unique=True)
-    content = models.TextField()
+    content = CKEditor5Field("Content", config_name="extends")
     last_updated = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 

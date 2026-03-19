@@ -39,3 +39,4 @@ uritemplate==4.2.0
 urllib3==2.5.0
 whitenoise==6.11.0
 twilio==9.10.3
+django-ckeditor-5==0.2.19

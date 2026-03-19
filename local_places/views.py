@@ -1,12 +1,12 @@
 from rest_framework import viewsets, permissions
-from .models import LocalPlace, StaticMap, Category, Tag, Activity, Tip
+from .models import LocalPlace, CartMap, Category, Tag, Activity, LiveLikeALocal
 from .serializers import (
     LocalPlaceSerializer,
-    StaticMapSerializer,
+    CartMapSerializer,
     CategorySerializer,
     TagSerializer,
     ActivitySerializer,
-    TipSerializer,
+    LiveLikeALocalSerializer,
 )
 
 
@@ -23,9 +23,9 @@ class LocalPlaceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class StaticMapViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = StaticMap.objects.all()
-    serializer_class = StaticMapSerializer
+class CartMapViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CartMap.objects.all()
+    serializer_class = CartMapSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
@@ -47,7 +47,7 @@ class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class TipViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Tip.objects.all()
-    serializer_class = TipSerializer
+class LiveLikeALocalViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = LiveLikeALocal.objects.all()
+    serializer_class = LiveLikeALocalSerializer
     permission_classes = [permissions.IsAuthenticated]

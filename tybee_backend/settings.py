@@ -153,7 +153,121 @@ INSTALLED_APPS = [
     "feedback",
     "rules",
     "local_places",
+    "django_ckeditor_5",
 ]
+
+CKEDITOR_5_CONFIGS = {
+    "default": {
+        "toolbar": [
+            "heading",
+            "|",
+            "bold",
+            "italic",
+            "link",
+            "bulletedList",
+            "numberedList",
+            "blockQuote",
+            "imageUpload",
+        ],
+    },
+    "extends": {
+        "blockToolbar": [
+            "paragraph",
+            "heading1",
+            "heading2",
+            "heading3",
+            "|",
+            "bulletedList",
+            "numberedList",
+            "|",
+            "blockQuote",
+        ],
+        "toolbar": [
+            "heading",
+            "|",
+            "outdent",
+            "indent",
+            "|",
+            "bold",
+            "italic",
+            "link",
+            "underline",
+            "strikethrough",
+            "code",
+            "subscript",
+            "superscript",
+            "highlight",
+            "|",
+            "codeBlock",
+            "sourceEditing",
+            "insertImage",
+            "bulletedList",
+            "numberedList",
+            "todoList",
+            "|",
+            "blockQuote",
+            "imageUpload",
+            "|",
+            "fontSize",
+            "fontFamily",
+            "fontColor",
+            "fontBackgroundColor",
+            "mediaEmbed",
+            "removeFormat",
+            "insertTable",
+        ],
+        "image": {
+            "toolbar": [
+                "imageTextAlternative",
+                "|",
+                "imageStyle:alignLeft",
+                "imageStyle:alignCenter",
+                "imageStyle:alignRight",
+                "|",
+                "imageStyle:full",
+                "imageStyle:side",
+                "|",
+            ],
+            "styles": ["full", "side", "alignLeft", "alignCenter", "alignRight"],
+        },
+        "table": {
+            "contentToolbar": [
+                "tableColumn",
+                "tableRow",
+                "mergeTableCells",
+                "tableProperties",
+                "tableCellProperties",
+            ],
+        },
+        "heading": {
+            "options": [
+                {
+                    "model": "paragraph",
+                    "title": "Paragraph",
+                    "class": "ck-heading_paragraph",
+                },
+                {
+                    "model": "heading1",
+                    "view": "h1",
+                    "title": "Heading 1",
+                    "class": "ck-heading_heading1",
+                },
+                {
+                    "model": "heading2",
+                    "view": "h2",
+                    "title": "Heading 2",
+                    "class": "ck-heading_heading2",
+                },
+                {
+                    "model": "heading3",
+                    "view": "h3",
+                    "title": "Heading 3",
+                    "class": "ck-heading_heading3",
+                },
+            ]
+        },
+    },
+}
 
 
 MIDDLEWARE = [
@@ -264,6 +378,10 @@ if USE_S3:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
+
+    # Backward compatibility for django-ckeditor-5 and other legacy packages
+    DEFAULT_FILE_STORAGE = STORAGES["default"]["BACKEND"]
+    STATICFILES_STORAGE = STORAGES["staticfiles"]["BACKEND"]
 
     AWS_S3_SIGNATURE_VERSION = "s3v4"
     AWS_S3_FILE_OVERWRITE = False

@@ -1,10 +1,16 @@
 from rest_framework import serializers
-from .models import LocalPlace, StaticMap, Category, Tag, Activity, Tip, OperatingHours
+from .models import (
+    LocalPlace,
+    CartMap,
+    Category,
+    Tag,
+    Activity,
+    LiveLikeALocal,
+    OperatingHours,
+)
 from users.serializers import PresignedUrlField
 from datetime import datetime
 import pytz
-
-
 
 DAY_NAMES = [
     "monday",
@@ -158,28 +164,36 @@ class ActivitySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class TipSerializer(serializers.ModelSerializer):
+class LiveLikeALocalSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Tip
+        model = LiveLikeALocal
         fields = "__all__"
 
 
-class StaticMapSerializer(serializers.ModelSerializer):
+class CartMapSerializer(serializers.ModelSerializer):
     image_presigned = PresignedUrlField(source="image", read_only=True)
     image_key = serializers.CharField(write_only=True, required=False, allow_null=True)
+    pdf_presigned = PresignedUrlField(source="pdf", read_only=True)
+    pdf_key = serializers.CharField(write_only=True, required=False, allow_null=True)
 
     class Meta:
-        model = StaticMap
+        model = CartMap
         fields = "__all__"
 
     def update(self, instance, validated_data):
         image_key = validated_data.pop("image_key", None)
+        pdf_key = validated_data.pop("pdf_key", None)
         if image_key:
             validated_data["image"] = image_key
+        if pdf_key:
+            validated_data["pdf"] = pdf_key
         return super().update(instance, validated_data)
 
     def create(self, validated_data):
         image_key = validated_data.pop("image_key", None)
+        pdf_key = validated_data.pop("pdf_key", None)
         if image_key:
             validated_data["image"] = image_key
+        if pdf_key:
+            validated_data["pdf"] = pdf_key
         return super().create(validated_data)

@@ -9,42 +9,78 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0015_alter_localplace_image_alter_localplace_image_2_and_more'),
+        (
+            "local_places",
+            "0015_alter_localplace_image_alter_localplace_image_2_and_more",
+        ),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='localplace',
-            name='image',
+            model_name="localplace",
+            name="image",
         ),
         migrations.RemoveField(
-            model_name='localplace',
-            name='image_2',
+            model_name="localplace",
+            name="image_2",
         ),
         migrations.RemoveField(
-            model_name='localplace',
-            name='image_3',
+            model_name="localplace",
+            name="image_3",
         ),
         migrations.RemoveField(
-            model_name='localplace',
-            name='image_4',
+            model_name="localplace",
+            name="image_4",
         ),
         migrations.RemoveField(
-            model_name='localplace',
-            name='image_5',
+            model_name="localplace",
+            name="image_5",
         ),
         migrations.CreateModel(
-            name='LocalPlaceImage',
+            name="LocalPlaceImage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.ImageField(upload_to='local_places/', validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']), tybee_backend.validators.validate_image_size])),
-                ('order', models.PositiveIntegerField(default=0)),
-                ('local_place', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='local_places.localplace')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "image",
+                    models.ImageField(
+                        upload_to="local_places/",
+                        validators=[
+                            django.core.validators.FileExtensionValidator(
+                                allowed_extensions=[
+                                    "jpg",
+                                    "jpeg",
+                                    "png",
+                                    "webp",
+                                    "heic",
+                                    "heif",
+                                ]
+                            ),
+                            tybee_backend.validators.validate_image_size,
+                        ],
+                    ),
+                ),
+                ("order", models.PositiveIntegerField(default=0)),
+                (
+                    "local_place",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="local_places.localplace",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Local Place Image',
-                'verbose_name_plural': 'Local Place Images',
-                'ordering': ['order', 'id'],
+                "verbose_name": "Local Place Image",
+                "verbose_name_plural": "Local Place Images",
+                "ordering": ["order", "id"],
             },
         ),
     ]

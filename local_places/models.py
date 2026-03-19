@@ -1,24 +1,42 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from tybee_backend.validators import validate_image_size, validate_image_extension
+from tybee_backend.validators import (
+    validate_image_size,
+    validate_image_extension,
+    validate_pdf_extension,
+)
 
 
-class StaticMap(models.Model):
+class CartMap(models.Model):
     title = models.CharField(max_length=255)
     image = models.ImageField(
-        upload_to="static_maps/",
+        upload_to="cart_maps/",
         validators=[validate_image_extension, validate_image_size],
+        null=True,
+        blank=True,
     )
-    description = models.TextField(blank=True)
+    pdf = models.FileField(
+        upload_to="cart_maps/pdfs/",
+        validators=[validate_pdf_extension, validate_image_size],
+        null=True,
+        blank=True,
+    )
+    description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if not self.image and not self.pdf:
+            raise ValidationError("You must upload at least an image or a PDF.")
 
     def __str__(self):
         return self.title
 
     class Meta:
-        verbose_name = "Static Map"
-        verbose_name_plural = "Static Maps"
+        verbose_name = "Cart Map"
+        verbose_name_plural = "Cart Maps"
 
 
 class Category(models.Model):
@@ -53,13 +71,17 @@ class Activity(models.Model):
         verbose_name_plural = "Activities"
 
 
-class Tip(models.Model):
+class LiveLikeALocal(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
-    tags = models.ManyToManyField(Tag, blank=True, related_name="tips")
+    tags = models.ManyToManyField(Tag, blank=True, related_name="live_like_a_local")
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = "Live Like a Local"
+        verbose_name_plural = "Live Like a Local"
 
 
 class LocalPlaceImage(models.Model):
@@ -79,6 +101,7 @@ class LocalPlaceImage(models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+
         if not self.pk and getattr(self, "local_place_id", None):
             count = LocalPlaceImage.objects.filter(local_place=self.local_place).count()
             if count >= 10:
@@ -87,9 +110,9 @@ class LocalPlaceImage(models.Model):
     def __str__(self):
         return f"Image for {self.local_place.name}"
 
+
 class LocalPlace(models.Model):
     name = models.CharField(max_length=255)
-    highlight = models.CharField(max_length=255, blank=True)
     description = models.TextField()
     category = models.ForeignKey(
         Category,
@@ -100,7 +123,9 @@ class LocalPlace(models.Model):
     )
     tags = models.ManyToManyField(Tag, blank=True, related_name="places")
     activities = models.ManyToManyField(Activity, blank=True, related_name="places")
-    tips = models.ManyToManyField(Tip, blank=True, related_name="places")
+    live_like_a_local = models.ManyToManyField(
+        LiveLikeALocal, blank=True, related_name="places"
+    )
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     popularity_score = models.DecimalField(
@@ -174,3 +199,6 @@ class OperatingHours(models.Model):
 
     def __str__(self):
         return f"{self.local_place.name} — {self.get_day_of_week_display()}"
+
+
+# Trigger reload

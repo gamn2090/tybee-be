@@ -1,19 +1,19 @@
 from rest_framework.routers import DefaultRouter
 from .views import (
     LocalPlaceViewSet,
-    StaticMapViewSet,
+    CartMapViewSet,
     CategoryViewSet,
     TagViewSet,
     ActivityViewSet,
-    TipViewSet,
+    LiveLikeALocalViewSet,
 )
 
 router = DefaultRouter()
 router.register(r"places", LocalPlaceViewSet)
-router.register(r"static-maps", StaticMapViewSet)
+router.register(r"cart-maps", CartMapViewSet)
 router.register(r"categories", CategoryViewSet)
 router.register(r"tags", TagViewSet)
 router.register(r"activities", ActivityViewSet)
-router.register(r"tips", TipViewSet)
+router.register(r"live-like-a-local", LiveLikeALocalViewSet)
 
 urlpatterns = router.urls
