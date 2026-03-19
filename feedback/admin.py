@@ -27,7 +27,7 @@ class BaseFeedbackAdmin(ModelAdmin):
 class UserFeedbackAdmin(BaseFeedbackAdmin):
     list_display = ("user_name", "message_truncated", "status", "created_at")
     list_editable = ("status",)
-    search_fields = ("user__phone_number", "status", "message", "admin_notes")
+    search_fields = ("user__phone_number", "status", "message")
     list_filter = ("status", "created_at")
 
     def message_truncated(self, obj):
@@ -44,7 +44,7 @@ class UserFeedbackAdmin(BaseFeedbackAdmin):
 class HelpRequestAdmin(BaseFeedbackAdmin):
     list_display = ("user_name", "message_truncated", "status", "created_at")
     list_editable = ("status",)
-    search_fields = ("user__phone_number", "status", "message", "admin_notes")
+    search_fields = ("user__phone_number", "status", "message")
     list_filter = ("status", "created_at")
 
     def message_truncated(self, obj):
@@ -61,7 +61,7 @@ class HelpRequestAdmin(BaseFeedbackAdmin):
 class ReportProblemAdmin(BaseFeedbackAdmin):
     list_display = ("user_name", "message_truncated", "status", "created_at")
     list_editable = ("status",)
-    search_fields = ("user__phone_number", "status", "message", "admin_notes")
+    search_fields = ("user__phone_number", "status", "message")
     list_filter = ("status", "created_at")
 
     def message_truncated(self, obj):
@@ -78,7 +78,7 @@ class ReportProblemAdmin(BaseFeedbackAdmin):
 class ContactUsAdmin(BaseFeedbackAdmin):
     list_display = ("user_name", "message_truncated", "status", "created_at")
     list_editable = ("status",)
-    search_fields = ("user__phone_number", "status", "message", "admin_notes")
+    search_fields = ("user__phone_number", "status", "message")
     list_filter = ("status", "created_at")
 
     def message_truncated(self, obj):

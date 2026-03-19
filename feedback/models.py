@@ -13,7 +13,6 @@ class UserFeedback(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    admin_notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"App Feedback - {self.user}"
@@ -34,7 +33,6 @@ class HelpRequest(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    admin_notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Help Request - {self.user}"
@@ -55,7 +53,6 @@ class ReportProblem(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    admin_notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Report Problem - {self.user}"
@@ -76,7 +73,6 @@ class ContactUs(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    admin_notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Contact Us - {self.user}"
