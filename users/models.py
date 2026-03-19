@@ -34,7 +34,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=60)
     last_name = models.CharField(max_length=60)
     phone_number = models.CharField(max_length=20, unique=True)
-    email = models.EmailField(blank=True, null=True)
     zipcode = models.CharField(max_length=10, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -55,7 +54,7 @@ class PasswordResetOTP(models.Model):
     is_used = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"OTP for {self.user.email}"
+        return f"OTP for {self.user.phone_number}"
 
 
 class signupOTP(models.Model):

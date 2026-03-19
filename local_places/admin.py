@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.conf import settings
 from django.utils.html import format_html
-from import_export.admin import ImportExportModelAdmin
+# from import_export.admin import ImportExportModelAdmin
 from .models import (
     LocalPlace,
     LocalPlaceImage,
@@ -45,6 +45,35 @@ class OperatingHoursFormSet(forms.models.BaseInlineFormSet):
             selected_days.append(day)
 
 
+class LocalPlaceImageFormSet(forms.models.BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+
+        selected_orders = []
+        for form in self.forms:
+            # Skip forms marked for deletion
+            if self.can_delete and self._should_delete_form(form):
+                continue
+            
+            # Skip empty forms
+            if not form.cleaned_data:
+                continue
+
+            order = form.cleaned_data.get("order")
+
+            # Form might be empty / incomplete
+            if order is None:
+                continue
+
+            if order in selected_orders:
+                form.add_error("order", "This order number is already assigned to another image.")
+                raise ValidationError(
+                    "You cannot have multiple images with the same order number for the same place."
+                )
+
+            selected_orders.append(order)
+
+
 class OperatingHoursForm(forms.ModelForm):
     class Meta:
         model = OperatingHours
@@ -80,6 +109,7 @@ class OperatingHoursInline(TabularInline):
 
 class LocalPlaceImageInline(TabularInline):
     model = LocalPlaceImage
+    formset = LocalPlaceImageFormSet
     extra = 0
     min_num = 1
     validate_min = True
@@ -114,15 +144,14 @@ class LocalPlaceAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if "name" in self.fields:
+            self.fields["name"].widget.attrs["autocomplete"] = "new-password"
+
         readonly_fields = [
             "latitude",
             "longitude",
             "google_places_id",
             "google_places_link",
-            "website_url",
-            "contact_number",
-            "popularity_score",
-            "review_count",
         ]
         for field in readonly_fields:
             if field in self.fields:
@@ -133,15 +162,15 @@ class LocalPlaceAdminForm(forms.ModelForm):
 
 
 @admin.register(LocalPlace)
-class LocalPlaceAdmin(ModelAdmin, ImportExportModelAdmin):
+class LocalPlaceAdmin(ModelAdmin):
     form = LocalPlaceAdminForm
     list_display = (
         "name",
         "category",
         "popularity_score",
         "review_count",
-        "address",
-        "website_url",
+        "address_truncated",
+        "website_url_truncated",
         "contact_number",
         "is_active",
         "created_at",
@@ -185,14 +214,28 @@ class LocalPlaceAdmin(ModelAdmin, ImportExportModelAdmin):
         extra_js = forms.Media(
             js=[
                 f"https://maps.googleapis.com/maps/api/js?key={api_key}&libraries=places",
-                "local_places/js/admin_places.js",
+                "local_places/js/admin_places.js?v=1",
             ]
         )
         return super().media + extra_js
 
+    def website_url_truncated(self, obj):
+        if obj.website_url and len(obj.website_url) > 30:
+            return obj.website_url[:27] + "..."
+        return obj.website_url
+
+    website_url_truncated.short_description = "Website"
+
+    def address_truncated(self, obj):
+        if obj.address and len(obj.address) > 40:
+            return obj.address[:37] + "..."
+        return obj.address
+
+    address_truncated.short_description = "Address"
+
 
 @admin.register(Category)
-class CategoryAdmin(ModelAdmin, ImportExportModelAdmin):
+class CategoryAdmin(ModelAdmin):
     list_display = ("title", "description_truncated")
     search_fields = ("title",)
 
@@ -207,13 +250,13 @@ class CategoryAdmin(ModelAdmin, ImportExportModelAdmin):
 
 
 @admin.register(Tag)
-class TagAdmin(ModelAdmin, ImportExportModelAdmin):
+class TagAdmin(ModelAdmin):
     list_display = ("title",)
     search_fields = ("title",)
 
 
 @admin.register(Activity)
-class ActivityAdmin(ModelAdmin, ImportExportModelAdmin):
+class ActivityAdmin(ModelAdmin):
     list_display = ("title", "description_truncated")
     search_fields = ("title",)
 
@@ -228,7 +271,7 @@ class ActivityAdmin(ModelAdmin, ImportExportModelAdmin):
 
 
 @admin.register(LiveLikeALocal)
-class LiveLikeALocalAdmin(ModelAdmin, ImportExportModelAdmin):
+class LiveLikeALocalAdmin(ModelAdmin):
     list_display = ("name", "description_truncated")
     search_fields = ("name",)
 
@@ -243,10 +286,18 @@ class LiveLikeALocalAdmin(ModelAdmin, ImportExportModelAdmin):
 
 
 @admin.register(CartMap)
-class CartMapAdmin(ModelAdmin, ImportExportModelAdmin):
-    list_display = ("title", "image_preview_list", "pdf_preview_list", "created_at")
+class CartMapAdmin(ModelAdmin):
+    list_display = ("title", "map_file_type", "image_preview_list", "pdf_preview_list", "created_at")
     readonly_fields = ("image_preview", "pdf_preview")
     search_fields = ("title",)
+    fieldsets = [
+        (None, {"fields": ("title", "description", "map_file_type")}),
+        ("Image Upload", {"fields": ("image", "image_preview")}),
+        ("PDF Upload", {"fields": ("pdf", "pdf_preview")}),
+    ]
+
+    class Media:
+        js = ("local_places/js/cart_map_admin.js?v=2",)
 
     def image_preview(self, obj):
         if obj.image:

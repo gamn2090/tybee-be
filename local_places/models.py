@@ -8,6 +8,13 @@ from tybee_backend.validators import (
 
 
 class CartMap(models.Model):
+    MAP_FILE_TYPE_CHOICES = [
+        ("image", "Image"),
+        ("pdf", "PDF"),
+    ]
+    map_file_type = models.CharField(
+        max_length=10, choices=MAP_FILE_TYPE_CHOICES, default="image"
+    )
     title = models.CharField(max_length=255)
     image = models.ImageField(
         upload_to="cart_maps/",
@@ -28,8 +35,10 @@ class CartMap(models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
 
-        if not self.image and not self.pdf:
-            raise ValidationError("You must upload at least an image or a PDF.")
+        if self.map_file_type == "image" and not self.image:
+            raise ValidationError({"image": "Please upload an image for this Cart Map."})
+        if self.map_file_type == "pdf" and not self.pdf:
+            raise ValidationError({"pdf": "Please upload a PDF for this Cart Map."})
 
     def __str__(self):
         return self.title
@@ -96,6 +105,7 @@ class LocalPlaceImage(models.Model):
 
     class Meta:
         ordering = ["order", "id"]
+        unique_together = ("local_place", "order")
         verbose_name = "Local Place Image"
         verbose_name_plural = "Local Place Images"
 
