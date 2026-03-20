@@ -14,10 +14,7 @@ class BaseFeedbackAdmin(ModelAdmin):
         return False
 
     readonly_fields = ("user", "user_name", "message", "created_at")
-    fieldsets = (
-        (None, {"fields": ("user", "user_name", "message", "status", "created_at")}),
-        # ("Admin Notes", {"fields": ("admin_notes",)}),
-    )
+   
 
     def user_name(self, obj):
         if obj.user:
