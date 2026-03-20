@@ -1,3 +1,5 @@
+import requests
+from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from tybee_backend.validators import (
@@ -162,6 +164,9 @@ class LocalPlace(models.Model):
     class Meta:
         verbose_name = "Local Place"
         verbose_name_plural = "Local Places"
+
+
+
 
 
 class OperatingHours(models.Model):

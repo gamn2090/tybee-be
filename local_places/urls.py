@@ -1,3 +1,4 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 from .views import (
     LocalPlaceViewSet,
@@ -6,6 +7,7 @@ from .views import (
     TagViewSet,
     ActivityViewSet,
     LiveLikeALocalViewSet,
+    RestaurantListView,
 )
 
 router = DefaultRouter()
@@ -16,4 +18,7 @@ router.register(r"tags", TagViewSet)
 router.register(r"activities", ActivityViewSet)
 router.register(r"live-like-a-local", LiveLikeALocalViewSet)
 
-urlpatterns = router.urls
+
+urlpatterns = router.urls + [
+    path("restaurants/", RestaurantListView.as_view(), name="restaurant-list"),
+]

@@ -197,3 +197,11 @@ class CartMapSerializer(serializers.ModelSerializer):
         if pdf_key:
             validated_data["pdf"] = pdf_key
         return super().create(validated_data)
+
+
+class RestaurantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocalPlace
+        fields = ("id", "name", "latitude", "longitude", "address")
+
+

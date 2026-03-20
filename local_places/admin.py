@@ -234,6 +234,8 @@ class LocalPlaceAdmin(ModelAdmin):
     address_truncated.short_description = "Address"
 
 
+
+
 @admin.register(Category)
 class CategoryAdmin(ModelAdmin):
     list_display = ("title", "description_truncated")
@@ -287,14 +289,30 @@ class LiveLikeALocalAdmin(ModelAdmin):
 
 @admin.register(CartMap)
 class CartMapAdmin(ModelAdmin):
-    list_display = ("title", "map_file_type", "image_preview_list", "pdf_preview_list", "created_at")
+    list_display = (
+        "title",
+        "description_truncated",
+        "map_file_type",
+        "image_preview_list",
+        "pdf_preview_list",
+        "created_at",
+    )
     readonly_fields = ("image_preview", "pdf_preview")
-    search_fields = ("title",)
+    search_fields = ("title", "description")
     fieldsets = [
         (None, {"fields": ("title", "description", "map_file_type")}),
         ("Image Upload", {"fields": ("image", "image_preview")}),
         ("PDF Upload", {"fields": ("pdf", "pdf_preview")}),
     ]
+
+    def description_truncated(self, obj):
+        return (
+            obj.description[:100] + "..."
+            if obj.description and len(obj.description) > 100
+            else obj.description
+        )
+
+    description_truncated.short_description = "Description"
 
     class Media:
         js = ("local_places/js/cart_map_admin.js",)
