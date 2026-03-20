@@ -63,5 +63,5 @@ class RestaurantListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return LocalPlace.objects.filter(category__title="Restaurant")
+        return LocalPlace.objects.all()
 
