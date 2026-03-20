@@ -2,7 +2,7 @@ import requests
 from django.conf import settings
 from rest_framework import viewsets, permissions, generics, status
 from rest_framework.response import Response
-from .models import LocalPlace, CartMap, Category, Tag, Activity, LiveLikeALocal, Restaurant
+from .models import LocalPlace, CartMap, Category, Tag, Activity, LiveLikeALocal
 from .serializers import (
     LocalPlaceSerializer,
     CartMapSerializer,
@@ -10,7 +10,7 @@ from .serializers import (
     TagSerializer,
     ActivitySerializer,
     LiveLikeALocalSerializer,
-    RestaurantAddSerializer,
+    RestaurantSerializer,
 )
 
 
@@ -56,12 +56,12 @@ class LiveLikeALocalViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LiveLikeALocalSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class RestaurantListView(generics.ListAPIView):
-    queryset = Restaurant.objects.all()
-    serializer_class = RestaurantAddSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
-class RestaurantRetrieveView(generics.RetrieveAPIView):
-    queryset = Restaurant.objects.all()
-    serializer_class = RestaurantAddSerializer
+class RestaurantListView(generics.ListAPIView):
+    serializer_class = RestaurantSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return LocalPlace.objects.filter(category__title="Restaurant")
+

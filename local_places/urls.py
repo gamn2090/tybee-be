@@ -8,7 +8,6 @@ from .views import (
     ActivityViewSet,
     LiveLikeALocalViewSet,
     RestaurantListView,
-    RestaurantRetrieveView,
 )
 
 router = DefaultRouter()
@@ -22,5 +21,4 @@ router.register(r"live-like-a-local", LiveLikeALocalViewSet)
 
 urlpatterns = router.urls + [
     path("restaurants/", RestaurantListView.as_view(), name="restaurant-list"),
-    path("restaurants/<int:pk>/", RestaurantRetrieveView.as_view(), name="restaurant-detail"),
 ]

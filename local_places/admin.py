@@ -12,7 +12,6 @@ from .models import (
     Activity,
     LiveLikeALocal,
     OperatingHours,
-    Restaurant,
 )
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.widgets import UnfoldAdminTimeWidget
@@ -235,38 +234,6 @@ class LocalPlaceAdmin(ModelAdmin):
     address_truncated.short_description = "Address"
 
 
-class RestaurantForm(forms.ModelForm):
-    class Meta:
-        model = Restaurant
-        fields = ["name", "address", "latitude", "longitude"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        readonly_fields = ["latitude", "longitude"]
-        for field in readonly_fields:
-            if field in self.fields:
-                self.fields[field].widget.attrs["readonly"] = True
-                self.fields[field].widget.attrs["style"] = "pointer-events: none; opacity: 0.7;"
-
-
-@admin.register(Restaurant)
-class RestaurantAdmin(ModelAdmin):
-    form = RestaurantForm
-    list_display = ("name", "address", "latitude", "longitude")
-    search_fields = ("name", "address")
-    fieldsets = [
-        (None, {"fields": ("name", "address", "latitude", "longitude")}),
-    ]
-
-    @property
-    def media(self):
-        api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", "")
-        return forms.Media(
-            js=[
-                f"https://maps.googleapis.com/maps/api/js?key={api_key}&libraries=places",
-                "local_places/js/admin_places.js?v=1",
-            ]
-        )
 
 
 @admin.register(Category)

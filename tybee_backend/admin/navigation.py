@@ -29,11 +29,6 @@ NAVIGATION = [
                 "link": reverse_lazy("admin:local_places_localplace_changelist"),
             },
             {
-                "title": _("Restaurants"),
-                "icon": "restaurant",
-                "link": reverse_lazy("admin:local_places_restaurant_changelist"),
-            },
-            {
                 "title": _("Categories"),
                 "icon": "category",
                 "link": reverse_lazy("admin:local_places_category_changelist"),

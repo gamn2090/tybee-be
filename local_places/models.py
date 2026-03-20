@@ -166,40 +166,7 @@ class LocalPlace(models.Model):
         verbose_name_plural = "Local Places"
 
 
-class Restaurant(models.Model):
-    name = models.CharField(max_length=255)
-    address = models.CharField(max_length=500)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
 
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Restaurant"
-        verbose_name_plural = "Restaurants"
-
-    def save(self, *args, **kwargs):
-        # Add geocoding logic
-        api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", "")
-        if self.address and api_key and (not self.latitude or not self.longitude):
-            try:
-                response = requests.get(
-                    "https://maps.googleapis.com/maps/api/geocode/json",
-                    params={"address": self.address, "key": api_key},
-                    timeout=5,
-                )
-                data = response.json()
-                if data["status"] == "OK":
-                    location = data["results"][0]["geometry"]["location"]
-                    self.latitude = location["lat"]
-                    self.longitude = location["lng"]
-                else:
-                    print(f"DEBUG: Geocoding failed for '{self.address}': {data}")
-            except Exception as e:
-                print(f"DEBUG: Geocoding exception: {e}")
-
-        super().save(*args, **kwargs)
 
 
 class OperatingHours(models.Model):
