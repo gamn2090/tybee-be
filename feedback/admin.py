@@ -14,7 +14,6 @@ class BaseFeedbackAdmin(ModelAdmin):
         return False
 
     readonly_fields = ("user", "user_name", "message", "created_at")
-   
 
     def user_name(self, obj):
         if obj.user:
