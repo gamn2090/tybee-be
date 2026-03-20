@@ -1,5 +1,8 @@
-from rest_framework import viewsets, permissions
-from .models import LocalPlace, CartMap, Category, Tag, Activity, LiveLikeALocal
+import requests
+from django.conf import settings
+from rest_framework import viewsets, permissions, generics, status
+from rest_framework.response import Response
+from .models import LocalPlace, CartMap, Category, Tag, Activity, LiveLikeALocal, Restaurant
 from .serializers import (
     LocalPlaceSerializer,
     CartMapSerializer,
@@ -7,6 +10,7 @@ from .serializers import (
     TagSerializer,
     ActivitySerializer,
     LiveLikeALocalSerializer,
+    RestaurantAddSerializer,
 )
 
 
@@ -50,4 +54,14 @@ class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
 class LiveLikeALocalViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = LiveLikeALocal.objects.all()
     serializer_class = LiveLikeALocalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class RestaurantListView(generics.ListAPIView):
+    queryset = Restaurant.objects.all()
+    serializer_class = RestaurantAddSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class RestaurantRetrieveView(generics.RetrieveAPIView):
+    queryset = Restaurant.objects.all()
+    serializer_class = RestaurantAddSerializer
     permission_classes = [permissions.IsAuthenticated]

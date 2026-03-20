@@ -7,6 +7,7 @@ from .models import (
     Activity,
     LiveLikeALocal,
     OperatingHours,
+    Restaurant,
 )
 from users.serializers import PresignedUrlField
 from datetime import datetime
@@ -197,3 +198,9 @@ class CartMapSerializer(serializers.ModelSerializer):
         if pdf_key:
             validated_data["pdf"] = pdf_key
         return super().create(validated_data)
+
+class RestaurantAddSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant
+        fields = ("id", "name", "address", "latitude", "longitude")
+        read_only_fields = ("id", "latitude", "longitude")

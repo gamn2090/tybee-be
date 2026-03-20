@@ -10,4 +10,4 @@ from .serializers import LegalDocumentSerializer
 class LegalDocumentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = LegalDocument.objects.all()
     serializer_class = LegalDocumentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
