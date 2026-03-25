@@ -175,10 +175,35 @@ class CartMapSerializer(serializers.ModelSerializer):
     image_key = serializers.CharField(write_only=True, required=False, allow_null=True)
     pdf_presigned = PresignedUrlField(source="pdf", read_only=True)
     pdf_key = serializers.CharField(write_only=True, required=False, allow_null=True)
+    zones = serializers.SerializerMethodField()
 
     class Meta:
         model = CartMap
-        fields = "__all__"
+        fields = (
+            "id",
+            "map_file_type",
+            "title",
+            "image",
+            "image_presigned",
+            "image_key",
+            "pdf",
+            "pdf_presigned",
+            "pdf_key",
+            "description",
+            "zones",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_zones(self, obj):
+        if obj.title == "Whole Tybee Island":
+            # Fetch all other CartMap objects that are "Zones"
+            zones = CartMap.objects.filter(title__icontains="Zone").exclude(id=obj.id)
+            return [
+                {"id": z.id, "title": z.title, "description": z.description}
+                for z in zones
+            ]
+        return []
 
     def update(self, instance, validated_data):
         image_key = validated_data.pop("image_key", None)
