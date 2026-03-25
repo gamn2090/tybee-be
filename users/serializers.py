@@ -6,12 +6,18 @@ from django.core.files.storage import default_storage
 import boto3
 
 
-# Reusable field for presigned S3 URLs (read-only)
-class PresignedUrlField(serializers.ReadOnlyField):
+# Reusable field for presigned S3 URLs (writable)
+class PresignedUrlField(serializers.Field):
+    """
+    Custom field that:
+    - On read: Returns a temporary GET presigned URL for the S3 object.
+    - On write: Accepts a full S3 URL or an S3 key and returns the clean key.
+    """
+
     def to_representation(self, value):
         if not value:
             return None
-        url = value.url
+        url = value.url if hasattr(value, "url") else str(value)
         if hasattr(default_storage, "bucket"):
             region = getattr(settings, "AWS_S3_REGION_NAME", "us-east-1")
             s3_client = boto3.client(
@@ -22,7 +28,7 @@ class PresignedUrlField(serializers.ReadOnlyField):
                 endpoint_url=f"https://s3.{region}.amazonaws.com",
             )
             bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-            key = value.name
+            key = value.name if hasattr(value, "name") else str(value)
             try:
                 presigned_url = s3_client.generate_presigned_url(
                     "get_object",
@@ -33,6 +39,22 @@ class PresignedUrlField(serializers.ReadOnlyField):
             except Exception:
                 return url
         return url
+
+    def to_internal_value(self, data):
+        if not data:
+            return None
+
+        # If it's a full S3 URL, extract the key
+        # Pattern: https://bucket.s3.region.amazonaws.com/key
+        if "s3" in data and "amazonaws.com" in data:
+            try:
+                # Split by the first '/' after the domain
+                parts = data.split("amazonaws.com/", 1)
+                if len(parts) > 1:
+                    return parts[1]
+            except Exception:
+                pass
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -45,7 +67,7 @@ class UserSerializer(serializers.ModelSerializer):
         allow_null=True,
         help_text="S3 object key from a direct presigned URL upload.",
     )
-    profile_pic_presigned = PresignedUrlField(source="profile_pic", read_only=True)
+    profile_pic_presigned = PresignedUrlField(source="profile_pic", required=False)
     phone_number = serializers.CharField(
         read_only=True
     )  # Phone number cannot be changed after signup
@@ -70,7 +92,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def validate_profile_pic(self, value):
-        if value is None:
+        if value is None or isinstance(value, str):
             return value
         # Enforce 5 MB size limit
         max_size = getattr(settings, "MAX_UPLOAD_FILE_SIZE", 5 * 1024 * 1024)
