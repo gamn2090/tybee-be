@@ -64,4 +64,3 @@ class RestaurantListView(generics.ListAPIView):
 
     def get_queryset(self):
         return LocalPlace.objects.all()
-

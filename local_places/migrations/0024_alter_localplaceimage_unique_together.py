@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0023_alter_cartmap_description'),
+        ("local_places", "0023_alter_cartmap_description"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='localplaceimage',
-            unique_together={('local_place', 'order')},
+            name="localplaceimage",
+            unique_together={("local_place", "order")},
         ),
     ]

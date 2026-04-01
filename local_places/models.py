@@ -38,7 +38,9 @@ class CartMap(models.Model):
         from django.core.exceptions import ValidationError
 
         if self.map_file_type == "image" and not self.image:
-            raise ValidationError({"image": "Please upload an image for this Cart Map."})
+            raise ValidationError(
+                {"image": "Please upload an image for this Cart Map."}
+            )
         if self.map_file_type == "pdf" and not self.pdf:
             raise ValidationError({"pdf": "Please upload a PDF for this Cart Map."})
 
@@ -164,9 +166,6 @@ class LocalPlace(models.Model):
     class Meta:
         verbose_name = "Local Place"
         verbose_name_plural = "Local Places"
-
-
-
 
 
 class OperatingHours(models.Model):
