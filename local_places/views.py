@@ -22,7 +22,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 
 class LocalPlaceViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = LocalPlace.objects.all()
+    queryset = LocalPlace.objects.filter(is_active=True)
     serializer_class = LocalPlaceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -63,4 +63,4 @@ class RestaurantListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return LocalPlace.objects.all()
+        return LocalPlace.objects.filter(is_active=True)
