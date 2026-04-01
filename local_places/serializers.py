@@ -228,5 +228,3 @@ class RestaurantSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocalPlace
         fields = ("id", "name", "latitude", "longitude", "address")
-
-

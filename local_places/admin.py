@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.conf import settings
 from django.utils.html import format_html
+
 # from import_export.admin import ImportExportModelAdmin
 from .models import (
     LocalPlace,
@@ -54,7 +55,7 @@ class LocalPlaceImageFormSet(forms.models.BaseInlineFormSet):
             # Skip forms marked for deletion
             if self.can_delete and self._should_delete_form(form):
                 continue
-            
+
             # Skip empty forms
             if not form.cleaned_data:
                 continue
@@ -66,7 +67,9 @@ class LocalPlaceImageFormSet(forms.models.BaseInlineFormSet):
                 continue
 
             if order in selected_orders:
-                form.add_error("order", "This order number is already assigned to another image.")
+                form.add_error(
+                    "order", "This order number is already assigned to another image."
+                )
                 raise ValidationError(
                     "You cannot have multiple images with the same order number for the same place."
                 )
@@ -232,8 +235,6 @@ class LocalPlaceAdmin(ModelAdmin):
         return obj.address
 
     address_truncated.short_description = "Address"
-
-
 
 
 @admin.register(Category)

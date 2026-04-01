@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('local_places', '0024_alter_localplaceimage_unique_together'),
+        ("local_places", "0024_alter_localplaceimage_unique_together"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='cartmap',
-            name='map_file_type',
-            field=models.CharField(choices=[('image', 'Image'), ('pdf', 'PDF')], default='image', max_length=10),
+            model_name="cartmap",
+            name="map_file_type",
+            field=models.CharField(
+                choices=[("image", "Image"), ("pdf", "PDF")],
+                default="image",
+                max_length=10,
+            ),
         ),
     ]
