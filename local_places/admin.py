@@ -149,6 +149,14 @@ class LocalPlaceAdminForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if "name" in self.fields:
             self.fields["name"].widget.attrs["autocomplete"] = "new-password"
+            
+        if "contact_number" in self.fields:
+            self.fields["contact_number"].widget.attrs.update({
+                "maxlength": "10",
+                "pattern": "[0-9]{10}",
+                "title": "Contact number must be exactly 10 digits.",
+                "oninput": "this.value = this.value.replace(/[^0-9]/g, '')",
+            })
 
         readonly_fields = [
             "latitude",
@@ -162,6 +170,25 @@ class LocalPlaceAdminForm(forms.ModelForm):
                 self.fields[field].widget.attrs[
                     "style"
                 ] = "pointer-events: none; opacity: 0.7;"
+
+    def clean_contact_number(self):
+        contact_number = self.cleaned_data.get("contact_number")
+        
+        # If it's empty, we allow it (since it's blank=True, null=True in model)
+        if not contact_number:
+            return contact_number
+
+        # Strip any accidental whitespace
+        contact_number = contact_number.strip()
+        
+        if not contact_number.isdigit():
+            raise ValidationError("Contact number must contain only numbers.")
+            
+        if len(contact_number) != 10:
+            raise ValidationError("Contact number must be exactly 10 digits.")
+            
+        return contact_number
+
 
 
 @admin.register(LocalPlace)
@@ -180,6 +207,7 @@ class LocalPlaceAdmin(ModelAdmin):
     )
     search_fields = ("name",)
     list_filter = ("category", "is_active")
+    autocomplete_fields = ("tags", "activities", "live_like_a_local")
     fieldsets = (
         (
             "General Information",
