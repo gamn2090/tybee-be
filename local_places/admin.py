@@ -244,8 +244,8 @@ class LocalPlaceAdmin(ModelAdmin):
         api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", "")
         extra_js = forms.Media(
             js=[
-                f"https://maps.googleapis.com/maps/api/js?key={api_key}&libraries=places",
-                "local_places/js/admin_places.js?v=1",
+                f"https://maps.googleapis.com/maps/api/js?key={api_key}&libraries=places&loading=async",
+                "local_places/js/admin_places.js",
             ]
         )
         return super().media + extra_js
