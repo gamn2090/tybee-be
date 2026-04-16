@@ -2,6 +2,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
+from rest_framework.exceptions import AuthenticationFailed
 from .models import User, PasswordResetOTP, signupOTP
 from .serializers import (
     ChangePasswordSerializer,
@@ -37,6 +38,18 @@ class ForgotPasswordView(generics.GenericAPIView):
             return Response(
                 {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
             )
+
+        # If the account is not yet verified, signal the frontend to redirect
+        # to the OTP verification flow rather than the password-reset flow.
+        if not user.is_active:
+            return Response(
+                {
+                    "detail": "No active account found with the given credentials",
+                    "requires_otp_verification": True,
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
         # Generate random OTP
         otp_code = "".join(random.choices(string.digits, k=6))
         expires_at = timezone.now() + timezone.timedelta(minutes=10)
@@ -126,6 +139,25 @@ class ChangePasswordView(generics.GenericAPIView):
 @extend_schema(tags=["Signup & Login"])
 class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+
+        # If SimpleJWT returned a 401, check whether the account exists but
+        # is inactive (unverified). If so, add the flag so the frontend can
+        # redirect the user to the OTP verification screen instead of showing
+        # a generic "wrong credentials" message.
+        if response.status_code == status.HTTP_401_UNAUTHORIZED:
+            phone_number = request.data.get("phone_number") or request.data.get("username")
+            if phone_number:
+                try:
+                    user = User.objects.get(phone_number=phone_number)
+                    if not user.is_active:
+                        response.data["requires_otp_verification"] = True
+                except User.DoesNotExist:
+                    pass  # Wrong credentials — leave response untouched
+
+        return response
 
 
 @extend_schema(tags=["Signup & Login"])
