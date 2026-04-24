@@ -116,3 +116,115 @@ function setField(id, value) {
         el.dispatchEvent(new Event("change", { bubbles: true }));
     }
 }
+
+// ─── Image size validation ────────────────────────────────────────────────────
+(function () {
+    var MAX_MB = 5;
+    var MAX_BYTES = MAX_MB * 1024 * 1024;
+
+    /** Show or clear a red error message inside the file input's table cell. */
+    function setError(input, message) {
+        var cell = input.closest("td") || input.parentNode;
+        var errEl = cell.querySelector(".localplace-img-error");
+        if (!errEl) {
+            errEl = document.createElement("p");
+            errEl.className = "localplace-img-error";
+            errEl.style.cssText = [
+                "margin: 4px 0 0 0",
+                "font-size: 11px",
+                "font-weight: 600",
+                "color: #ef4444",
+                "line-height: 1.4",
+            ].join(";");
+            cell.appendChild(errEl);
+        }
+
+        if (message) {
+            errEl.textContent = "\u274c " + message;
+            errEl.style.display = "block";
+            input.style.outline = "2px solid #ef4444";
+        } else {
+            errEl.style.display = "none";
+            input.style.outline = "";
+        }
+    }
+
+    /** Attach change listener to validate file size on selection. */
+    function attachValidation(input) {
+        if (input.dataset.sizeValidationAttached) return;
+        input.dataset.sizeValidationAttached = "1";
+
+        input.addEventListener("change", function () {
+            var file = this.files && this.files[0];
+            if (!file) {
+                setError(this, null);
+                return;
+            }
+
+            if (file.size > MAX_BYTES) {
+                var sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                setError(
+                    this,
+                    "File too large: " + sizeMB + " MB. Maximum allowed is " + MAX_MB + " MB."
+                );
+                this.value = ""; // Clear the selection
+            } else {
+                setError(this, null);
+            }
+        });
+    }
+
+    /** Block form submission if any file input still has an oversized file. */
+    function blockSubmitIfErrors(form) {
+        if (form.dataset.sizeSubmitBlocked) return;
+        form.dataset.sizeSubmitBlocked = "1";
+
+        form.addEventListener("submit", function (e) {
+            var inputs = form.querySelectorAll("input[type='file']");
+            var hasError = false;
+
+            inputs.forEach(function (input) {
+                var file = input.files && input.files[0];
+                if (file && file.size > MAX_BYTES) {
+                    var sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                    setError(
+                        input,
+                        "File too large: " + sizeMB + " MB. Maximum allowed is " + MAX_MB + " MB."
+                    );
+                    hasError = true;
+                }
+            });
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                alert(
+                    "One or more images exceed the " + MAX_MB +
+                    " MB size limit. Please remove them before saving."
+                );
+            }
+        });
+    }
+
+    /** Scan for all file inputs and wire them up. Also handles dynamically added inline rows. */
+    function scanAndAttach() {
+        document.querySelectorAll("input[type='file']").forEach(function (input) {
+            attachValidation(input);
+        });
+
+        var form = document.querySelector("form#localplace_form, form");
+        if (form) blockSubmitIfErrors(form);
+    }
+
+    // Initial scan on page load
+    window.addEventListener("load", function () {
+        scanAndAttach();
+
+        // Watch for new inline rows added dynamically (e.g. "Add another Local Place Image")
+        var observer = new MutationObserver(function () {
+            scanAndAttach();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
+})();

@@ -227,4 +227,4 @@ class CartMapSerializer(serializers.ModelSerializer):
 class RestaurantSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocalPlace
-        fields = ("id", "name", "latitude", "longitude", "address")
+        fields = ("id", "name", "latitude", "longitude", "address", "google_places_id")
