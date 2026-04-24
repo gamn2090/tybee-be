@@ -46,6 +46,30 @@ class OperatingHoursFormSet(forms.models.BaseInlineFormSet):
             selected_days.append(day)
 
 
+MAX_IMAGE_SIZE_MB = 5
+MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
+
+
+class LocalPlaceImageForm(forms.ModelForm):
+    class Meta:
+        model = LocalPlaceImage
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "image" in self.fields:
+            self.fields["image"].label = "Image (max 5 MB)"
+
+    def clean_image(self):
+        image = self.cleaned_data.get("image")
+        if image and hasattr(image, "size") and image.size > MAX_IMAGE_SIZE_BYTES:
+            raise ValidationError(
+                f"Image size must not exceed {MAX_IMAGE_SIZE_MB} MB. "
+                f"Your file is {image.size / (1024 * 1024):.1f} MB."
+            )
+        return image
+
+
 class LocalPlaceImageFormSet(forms.models.BaseInlineFormSet):
     def clean(self):
         super().clean()
@@ -112,6 +136,7 @@ class OperatingHoursInline(TabularInline):
 
 class LocalPlaceImageInline(TabularInline):
     model = LocalPlaceImage
+    form = LocalPlaceImageForm
     formset = LocalPlaceImageFormSet
     extra = 0
     min_num = 1
@@ -384,7 +409,7 @@ class CartMapAdmin(ModelAdmin):
         formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
         if db_field.name == "image":
             formfield.widget.attrs.update(
-                {"accept": ".jpg, .jpeg, .png, .webp, .heic, .heif"}
+                {"accept": ".jpg,.jpeg,.png,.webp,.heic,.heif"}
             )
         elif db_field.name == "pdf":
             formfield.widget.attrs.update({"accept": ".pdf"})
