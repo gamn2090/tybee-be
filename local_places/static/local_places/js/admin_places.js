@@ -60,8 +60,12 @@ function attachAutocomplete(input) {
         }
 
         // ── Coordinates ───────────────────────────────────────────────────
-        setField("id_latitude", parseFloat(place.geometry.location.lat().toFixed(7)));
-        setField("id_longitude", parseFloat(place.geometry.location.lng().toFixed(7)));
+        var loc = place.geometry.viewport
+            ? place.geometry.viewport.getCenter()
+            : place.geometry.location;
+
+        setField("id_latitude", parseFloat(loc.lat().toFixed(7)));
+        setField("id_longitude", parseFloat(loc.lng().toFixed(7)));
 
         // ── Google Places meta ────────────────────────────────────────────
         setField("id_google_places_id", place.place_id || "");
