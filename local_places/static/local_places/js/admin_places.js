@@ -122,59 +122,185 @@ function setField(id, value) {
     var MAX_MB = 5;
     var MAX_BYTES = MAX_MB * 1024 * 1024;
 
-    /** Show or clear a red error message inside the file input's table cell. */
-    function setError(input, message) {
-        var cell = input.closest("td") || input.parentNode;
-        var errEl = cell.querySelector(".localplace-img-error");
-        if (!errEl) {
-            errEl = document.createElement("p");
-            errEl.className = "localplace-img-error";
-            errEl.style.cssText = [
-                "margin: 4px 0 0 0",
-                "font-size: 11px",
-                "font-weight: 600",
-                "color: #ef4444",
-                "line-height: 1.4",
-            ].join(";");
-            cell.appendChild(errEl);
+    // ── Inject shared styles once ─────────────────────────────────────────
+    (function injectStyles() {
+        if (document.getElementById("lp-upload-styles")) return;
+        var style = document.createElement("style");
+        style.id = "lp-upload-styles";
+        style.textContent = "\n" +
+            /* ── Inline error banner ── */
+            ".lp-img-error-banner {\n" +
+            "  display: flex;\n" +
+            "  align-items: flex-start;\n" +
+            "  gap: 8px;\n" +
+            "  margin: 8px 0 4px;\n" +
+            "  padding: 10px 14px;\n" +
+            "  background: #fef2f2;\n" +
+            "  border: 1.5px solid #fca5a5;\n" +
+            "  border-left: 4px solid #ef4444;\n" +
+            "  border-radius: 6px;\n" +
+            "  font-size: 12px;\n" +
+            "  font-weight: 600;\n" +
+            "  color: #b91c1c;\n" +
+            "  line-height: 1.5;\n" +
+            "  animation: lp-shake 0.35s ease;\n" +
+            "}\n" +
+            ".lp-img-error-banner .lp-err-icon {\n" +
+            "  font-size: 15px;\n" +
+            "  flex-shrink: 0;\n" +
+            "  margin-top: 1px;\n" +
+            "}\n" +
+            /* ── Toast (info + error) ── */
+            "#lp-toast {\n" +
+            "  position: fixed;\n" +
+            "  bottom: 28px;\n" +
+            "  right: 28px;\n" +
+            "  z-index: 99999;\n" +
+            "  display: flex;\n" +
+            "  align-items: flex-start;\n" +
+            "  gap: 10px;\n" +
+            "  min-width: 290px;\n" +
+            "  max-width: 370px;\n" +
+            "  padding: 14px 16px;\n" +
+            "  border-radius: 10px;\n" +
+            "  box-shadow: 0 8px 32px rgba(0,0,0,0.22);\n" +
+            "  font-family: inherit;\n" +
+            "  font-size: 13px;\n" +
+            "  font-weight: 500;\n" +
+            "  line-height: 1.5;\n" +
+            "  opacity: 0;\n" +
+            "  transform: translateY(16px);\n" +
+            "  transition: opacity 0.28s ease, transform 0.28s ease;\n" +
+            "  pointer-events: none;\n" +
+            "}\n" +
+            "#lp-toast.lp-toast-visible {\n" +
+            "  opacity: 1;\n" +
+            "  transform: translateY(0);\n" +
+            "  pointer-events: auto;\n" +
+            "}\n" +
+            "#lp-toast.lp-toast-info {\n" +
+            "  background: #1e40af;\n" +
+            "  color: #fff;\n" +
+            "  border: 1.5px solid #3b82f6;\n" +
+            "}\n" +
+            "#lp-toast.lp-toast-error {\n" +
+            "  background: #7f1d1d;\n" +
+            "  color: #fff;\n" +
+            "  border: 1.5px solid #ef4444;\n" +
+            "}\n" +
+            "#lp-toast .lp-toast-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }\n" +
+            "#lp-toast .lp-toast-body { flex: 1; }\n" +
+            "#lp-toast .lp-toast-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; }\n" +
+            "#lp-toast .lp-toast-msg  { font-size: 12px; opacity: 0.9; }\n" +
+            /* ── Shake keyframe ── */
+            "@keyframes lp-shake {\n" +
+            "  0%,100% { transform: translateX(0); }\n" +
+            "  20%     { transform: translateX(-5px); }\n" +
+            "  40%     { transform: translateX(5px); }\n" +
+            "  60%     { transform: translateX(-4px); }\n" +
+            "  80%     { transform: translateX(4px); }\n" +
+            "}\n";
+        document.head.appendChild(style);
+    })();
+
+    // ── Toast helper ──────────────────────────────────────────────────────
+    var toastTimer = null;
+
+    function showToast(type, title, msg, duration) {
+        duration = duration || 3500;
+        var el = document.getElementById("lp-toast");
+        if (!el) {
+            el = document.createElement("div");
+            el.id = "lp-toast";
+            el.innerHTML =
+                '<span class="lp-toast-icon"></span>' +
+                '<div class="lp-toast-body">' +
+                '<div class="lp-toast-title"></div>' +
+                '<div class="lp-toast-msg"></div>' +
+                '</div>';
+            document.body.appendChild(el);
         }
 
+        // Reset class, then set type class
+        el.className = "lp-toast-" + type;
+        el.querySelector(".lp-toast-icon").textContent = type === "info" ? "\u2139\ufe0f" : "\uD83D\uDEAB";
+        el.querySelector(".lp-toast-title").textContent = title;
+        el.querySelector(".lp-toast-msg").textContent = msg;
+
+        // Replay transition even if already visible
+        el.classList.remove("lp-toast-visible");
+        void el.offsetWidth;
+        el.classList.add("lp-toast-visible");
+
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+            el.classList.remove("lp-toast-visible");
+        }, duration);
+    }
+
+    // ── Inline error banner ───────────────────────────────────────────────
+    function setError(input, message) {
+        var cell = input.closest("td") || input.parentNode;
+        var banner = cell.querySelector(".lp-img-error-banner");
+
         if (message) {
-            errEl.textContent = "\u274c " + message;
-            errEl.style.display = "block";
+            if (!banner) {
+                banner = document.createElement("div");
+                banner.className = "lp-img-error-banner";
+                banner.innerHTML =
+                    '<span class="lp-err-icon">\uD83D\uDEAB</span>' +
+                    '<span class="lp-err-text"></span>';
+                cell.appendChild(banner);
+            }
+            // Re-trigger shake animation
+            banner.style.animation = "none";
+            void banner.offsetWidth;
+            banner.style.animation = "";
+
+            banner.querySelector(".lp-err-text").textContent = message;
+            banner.style.display = "flex";
             input.style.outline = "2px solid #ef4444";
+            input.style.borderRadius = "4px";
         } else {
-            errEl.style.display = "none";
+            if (banner) banner.style.display = "none";
             input.style.outline = "";
+            input.style.borderRadius = "";
         }
     }
 
-    /** Attach change listener to validate file size on selection. */
+    // ── Wire up a single file input ───────────────────────────────────────
     function attachValidation(input) {
         if (input.dataset.sizeValidationAttached) return;
         input.dataset.sizeValidationAttached = "1";
 
+        // Click → info toast reminding user of the limit
+        input.addEventListener("click", function () {
+            showToast(
+                "info",
+                "Image upload limit",
+                "Please upload images up to " + MAX_MB + " MB only. Larger files will be rejected.",
+                4000
+            );
+        });
+
+        // Change → validate immediately and show error if needed
         input.addEventListener("change", function () {
             var file = this.files && this.files[0];
-            if (!file) {
-                setError(this, null);
-                return;
-            }
+            if (!file) { setError(this, null); return; }
 
             if (file.size > MAX_BYTES) {
                 var sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-                setError(
-                    this,
-                    "File too large: " + sizeMB + " MB. Maximum allowed is " + MAX_MB + " MB."
-                );
-                this.value = ""; // Clear the selection
+                var msg = "File too large: " + sizeMB + " MB \u2014 maximum allowed is " + MAX_MB + " MB.";
+                setError(this, msg);
+                showToast("error", "File too large", msg, 5000);
+                this.value = ""; // clear the bad selection
             } else {
                 setError(this, null);
             }
         });
     }
 
-    /** Block form submission if any file input still has an oversized file. */
+    // ── Block submit if any file is oversized (safety net) ────────────────
     function blockSubmitIfErrors(form) {
         if (form.dataset.sizeSubmitBlocked) return;
         form.dataset.sizeSubmitBlocked = "1";
@@ -189,7 +315,7 @@ function setField(id, value) {
                     var sizeMB = (file.size / (1024 * 1024)).toFixed(1);
                     setError(
                         input,
-                        "File too large: " + sizeMB + " MB. Maximum allowed is " + MAX_MB + " MB."
+                        "File too large: " + sizeMB + " MB \u2014 maximum allowed is " + MAX_MB + " MB."
                     );
                     hasError = true;
                 }
@@ -198,33 +324,28 @@ function setField(id, value) {
             if (hasError) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                window.scrollTo({ top: 0, behavior: "smooth" });
-                alert(
-                    "One or more images exceed the " + MAX_MB +
-                    " MB size limit. Please remove them before saving."
+                showToast(
+                    "error",
+                    "Cannot save \u2014 oversized file",
+                    "One or more images exceed " + MAX_MB + " MB. Remove them and try again.",
+                    6000
                 );
+                window.scrollTo({ top: 0, behavior: "smooth" });
             }
         });
     }
 
-    /** Scan for all file inputs and wire them up. Also handles dynamically added inline rows. */
+    // ── Scan all inputs (handles dynamic inline rows too) ─────────────────
     function scanAndAttach() {
-        document.querySelectorAll("input[type='file']").forEach(function (input) {
-            attachValidation(input);
-        });
-
+        document.querySelectorAll("input[type='file']").forEach(attachValidation);
         var form = document.querySelector("form#localplace_form, form");
         if (form) blockSubmitIfErrors(form);
     }
 
-    // Initial scan on page load
     window.addEventListener("load", function () {
         scanAndAttach();
-
-        // Watch for new inline rows added dynamically (e.g. "Add another Local Place Image")
-        var observer = new MutationObserver(function () {
-            scanAndAttach();
-        });
+        // MutationObserver catches "Add another image" inline rows
+        var observer = new MutationObserver(scanAndAttach);
         observer.observe(document.body, { childList: true, subtree: true });
     });
 })();
