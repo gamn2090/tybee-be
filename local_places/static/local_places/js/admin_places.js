@@ -153,24 +153,24 @@ function setField(id, value) {
             /* ── Toast (info + error) ── */
             "#lp-toast {\n" +
             "  position: fixed;\n" +
-            "  bottom: 28px;\n" +
-            "  right: 28px;\n" +
+            "  top: 24px;\n" +
+            "  right: 24px;\n" +
             "  z-index: 99999;\n" +
             "  display: flex;\n" +
             "  align-items: flex-start;\n" +
-            "  gap: 10px;\n" +
-            "  min-width: 290px;\n" +
-            "  max-width: 370px;\n" +
-            "  padding: 14px 16px;\n" +
-            "  border-radius: 10px;\n" +
-            "  box-shadow: 0 8px 32px rgba(0,0,0,0.22);\n" +
+            "  gap: 12px;\n" +
+            "  min-width: 320px;\n" +
+            "  max-width: 420px;\n" +
+            "  padding: 16px 18px;\n" +
+            "  border-radius: 12px;\n" +
+            "  box-shadow: 0 12px 40px rgba(0,0,0,0.32), 0 2px 8px rgba(0,0,0,0.18);\n" +
             "  font-family: inherit;\n" +
-            "  font-size: 13px;\n" +
+            "  font-size: 14px;\n" +
             "  font-weight: 500;\n" +
             "  line-height: 1.5;\n" +
             "  opacity: 0;\n" +
-            "  transform: translateY(16px);\n" +
-            "  transition: opacity 0.28s ease, transform 0.28s ease;\n" +
+            "  transform: translateY(-20px);\n" +
+            "  transition: opacity 0.3s ease, transform 0.3s ease;\n" +
             "  pointer-events: none;\n" +
             "}\n" +
             "#lp-toast.lp-toast-visible {\n" +
@@ -179,19 +179,21 @@ function setField(id, value) {
             "  pointer-events: auto;\n" +
             "}\n" +
             "#lp-toast.lp-toast-info {\n" +
-            "  background: #1e40af;\n" +
+            "  background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);\n" +
             "  color: #fff;\n" +
-            "  border: 1.5px solid #3b82f6;\n" +
+            "  border: 2px solid #60a5fa;\n" +
+            "  border-top: 4px solid #93c5fd;\n" +
             "}\n" +
             "#lp-toast.lp-toast-error {\n" +
-            "  background: #7f1d1d;\n" +
+            "  background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%);\n" +
             "  color: #fff;\n" +
-            "  border: 1.5px solid #ef4444;\n" +
+            "  border: 2px solid #f87171;\n" +
+            "  border-top: 4px solid #fca5a5;\n" +
             "}\n" +
-            "#lp-toast .lp-toast-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }\n" +
+            "#lp-toast .lp-toast-icon { font-size: 24px; flex-shrink: 0; line-height: 1; margin-top: 1px; }\n" +
             "#lp-toast .lp-toast-body { flex: 1; }\n" +
-            "#lp-toast .lp-toast-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; }\n" +
-            "#lp-toast .lp-toast-msg  { font-size: 12px; opacity: 0.9; }\n" +
+            "#lp-toast .lp-toast-title { font-weight: 800; font-size: 14px; margin-bottom: 4px; letter-spacing: 0.01em; }\n" +
+            "#lp-toast .lp-toast-msg  { font-size: 13px; opacity: 0.92; }\n" +
             /* ── Shake keyframe ── */
             "@keyframes lp-shake {\n" +
             "  0%,100% { transform: translateX(0); }\n" +
@@ -279,7 +281,7 @@ function setField(id, value) {
                 "info",
                 "Image upload limit",
                 "Please upload images up to " + MAX_MB + " MB only. Larger files will be rejected.",
-                4000
+                5000
             );
         });
 
@@ -292,7 +294,7 @@ function setField(id, value) {
                 var sizeMB = (file.size / (1024 * 1024)).toFixed(1);
                 var msg = "File too large: " + sizeMB + " MB \u2014 maximum allowed is " + MAX_MB + " MB.";
                 setError(this, msg);
-                showToast("error", "File too large", msg, 5000);
+                showToast("error", "File too large", msg, 6000);
                 this.value = ""; // clear the bad selection
             } else {
                 setError(this, null);
@@ -328,7 +330,7 @@ function setField(id, value) {
                     "error",
                     "Cannot save \u2014 oversized file",
                     "One or more images exceed " + MAX_MB + " MB. Remove them and try again.",
-                    6000
+                    7000
                 );
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
