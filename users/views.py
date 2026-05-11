@@ -148,7 +148,9 @@ class LoginView(TokenObtainPairView):
         # redirect the user to the OTP verification screen instead of showing
         # a generic "wrong credentials" message.
         if response.status_code == status.HTTP_401_UNAUTHORIZED:
-            phone_number = request.data.get("phone_number") or request.data.get("username")
+            phone_number = request.data.get("phone_number") or request.data.get(
+                "username"
+            )
             if phone_number:
                 try:
                     user = User.objects.get(phone_number=phone_number)
@@ -169,7 +171,7 @@ class SendOTPView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         phone_number = serializer.validated_data.get("phone_number")
-        
+
         user_qs = User.objects.filter(phone_number=phone_number)
         if user_qs.exists():
             user = user_qs.first()
@@ -177,10 +179,12 @@ class SendOTPView(generics.GenericAPIView):
                 # User exists but is inactive. Resend OTP and return flag
                 otp_code = "".join(random.choices(string.digits, k=6))
                 expires_at = timezone.now() + timezone.timedelta(minutes=10)
-                
+
                 # Invalidate previous OTPs
-                signupOTP.objects.filter(phone_number=phone_number, is_used=False).update(is_used=True)
-                
+                signupOTP.objects.filter(
+                    phone_number=phone_number, is_used=False
+                ).update(is_used=True)
+
                 signupOTP.objects.create(
                     phone_number=phone_number, otp_code=otp_code, expires_at=expires_at
                 )
@@ -190,17 +194,20 @@ class SendOTPView(generics.GenericAPIView):
 
                 print(f"[DEBUG] OTP for {phone_number}: {otp_code} (Inactive User)")
 
-                return Response({
-                    "detail": "Account exists but not verified. OTP resent.", 
-                    "OTP": otp_code,
-                    "requires_otp_verification": True
-                }, status=status.HTTP_200_OK)
+                return Response(
+                    {
+                        "detail": "Account exists but not verified. OTP resent.",
+                        "OTP": otp_code,
+                        "requires_otp_verification": True,
+                    },
+                    status=status.HTTP_200_OK,
+                )
             else:
                 return Response(
                     {"detail": "User with phone number already exists."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        
+
         # Generate random OTP
         otp_code = "".join(random.choices(string.digits, k=6))
         expires_at = timezone.now() + timezone.timedelta(minutes=10)
@@ -297,27 +304,38 @@ class SignupView(generics.GenericAPIView):
                     user.save()
 
                     # Invalidate old OTPs
-                    signupOTP.objects.filter(phone_number=phone_number, is_used=False).update(is_used=True)
+                    signupOTP.objects.filter(
+                        phone_number=phone_number, is_used=False
+                    ).update(is_used=True)
 
                     # Generate and send new OTP
                     otp_code = "".join(random.choices(string.digits, k=6))
                     expires_at = timezone.now() + timezone.timedelta(minutes=10)
                     signupOTP.objects.create(
-                        phone_number=phone_number, otp_code=otp_code, expires_at=expires_at
+                        phone_number=phone_number,
+                        otp_code=otp_code,
+                        expires_at=expires_at,
                     )
 
-                    custom_message = f"Your Tybee signup verification code is: {otp_code}"
+                    custom_message = (
+                        f"Your Tybee signup verification code is: {otp_code}"
+                    )
                     send_sms_otp(phone_number, otp_code, custom_message)
 
-                    print(f"[DEBUG] Signup OTP for {phone_number} (Inactive User Restored): {otp_code}")
+                    print(
+                        f"[DEBUG] Signup OTP for {phone_number} (Inactive User Restored): {otp_code}"
+                    )
 
-                    return Response({
-                        "detail": "Account exists but not verified. Details updated and OTP resent.",
-                        "OTP": otp_code,
-                        "requires_otp_verification": True
-                    }, status=status.HTTP_200_OK)
+                    return Response(
+                        {
+                            "detail": "Account exists but not verified. Details updated and OTP resent.",
+                            "OTP": otp_code,
+                            "requires_otp_verification": True,
+                        },
+                        status=status.HTTP_200_OK,
+                    )
             except User.DoesNotExist:
-                pass # Proceed normally
+                pass  # Proceed normally
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -343,7 +361,7 @@ class SignupView(generics.GenericAPIView):
             {
                 "detail": "Account created. Please verify the OTP to activate your account.",
                 "OTP": otp_code,
-                "requires_otp_verification": True
+                "requires_otp_verification": True,
             },
             status=status.HTTP_201_CREATED,
         )
