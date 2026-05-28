@@ -139,8 +139,8 @@ class LocalPlaceImageInline(TabularInline):
     form = LocalPlaceImageForm
     formset = LocalPlaceImageFormSet
     extra = 0
-    min_num = 1
-    validate_min = True
+    min_num = 0
+    validate_min = False
     max_num = 10
     fields = ("image", "image_preview", "order")
     readonly_fields = ("image_preview",)
