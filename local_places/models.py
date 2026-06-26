@@ -116,8 +116,9 @@ class LocalPlaceImage(models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
 
-        if not self.pk and getattr(self, "local_place_id", None):
-            count = LocalPlaceImage.objects.filter(local_place=self.local_place).count()
+        local_place_id = getattr(self, 'local_place_id', None)
+        if not self.pk and local_place_id is not None:
+            count = LocalPlaceImage.objects.filter(local_place_id=local_place_id).count()
             if count >= 10:
                 raise ValidationError("A maximum of 10 images can be added per place.")
 
@@ -194,10 +195,17 @@ class OperatingHours(models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+        
+        # Require times if not closed
+        if not self.is_closed:
+            if not self.open_time or not self.close_time:
+                raise ValidationError("Please provide both opening and closing times, or mark as closed.")
+                
+        local_place_id = getattr(self, 'local_place_id', None)
 
         # Check if 7 days are already filled up
-        if not self.pk:
-            count = OperatingHours.objects.filter(local_place=self.local_place).count()
+        if not self.pk and local_place_id is not None:
+            count = OperatingHours.objects.filter(local_place_id=local_place_id).count()
             if count >= 7:
                 raise ValidationError(
                     "A maximum of 7 operating hours can be added per place."
@@ -205,7 +213,7 @@ class OperatingHours(models.Model):
 
             # Additional check to absolutely ensure day is unique before saving
             if OperatingHours.objects.filter(
-                local_place=self.local_place, day_of_week=self.day_of_week
+                local_place_id=local_place_id, day_of_week=self.day_of_week
             ).exists():
                 raise ValidationError(
                     f"{self.get_day_of_week_display()} is already added for this place."
