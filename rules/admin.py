@@ -5,6 +5,7 @@ from unfold.admin import ModelAdmin
 
 @admin.register(RuleCategory)
 class RuleCategoryAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = ("name", "slug", "is_active", "created_at")
     search_fields = ("name", "slug")
     list_filter = ("is_active",)
@@ -13,6 +14,7 @@ class RuleCategoryAdmin(ModelAdmin):
 
 @admin.register(Rule)
 class RuleAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = (
         "category",
         "title",

@@ -220,9 +220,11 @@ class LocalPlaceAdminForm(forms.ModelForm):
 @admin.register(LocalPlace)
 class LocalPlaceAdmin(ModelAdmin):
     form = LocalPlaceAdminForm
+    list_per_page = 10000
     list_display = (
-        "name",
+        "name_display",
         "category",
+        "image_count",
         "popularity_score",
         "review_count",
         "address_truncated",
@@ -283,6 +285,19 @@ class LocalPlaceAdmin(ModelAdmin):
 
     website_url_truncated.short_description = "Website"
 
+    def name_display(self, obj):
+        if obj.name and len(obj.name) > 40:
+            return obj.name[:37] + "..."
+        return obj.name
+
+    name_display.short_description = "Name"
+    name_display.admin_order_field = "name"
+
+    def image_count(self, obj):
+        return obj.images.count()
+
+    image_count.short_description = "Images"
+
     def address_truncated(self, obj):
         if obj.address and len(obj.address) > 40:
             return obj.address[:37] + "..."
@@ -293,6 +308,7 @@ class LocalPlaceAdmin(ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = ("title", "description_truncated")
     search_fields = ("title",)
 
@@ -308,12 +324,14 @@ class CategoryAdmin(ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = ("title",)
     search_fields = ("title",)
 
 
 @admin.register(Activity)
 class ActivityAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = ("title", "description_truncated")
     search_fields = ("title",)
 
@@ -329,6 +347,7 @@ class ActivityAdmin(ModelAdmin):
 
 @admin.register(LiveLikeALocal)
 class LiveLikeALocalAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = ("name", "description_truncated")
     search_fields = ("name",)
 
@@ -344,6 +363,7 @@ class LiveLikeALocalAdmin(ModelAdmin):
 
 @admin.register(CartMap)
 class CartMapAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = (
         "title",
         "description_truncated",

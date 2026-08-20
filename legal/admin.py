@@ -5,5 +5,6 @@ from unfold.admin import ModelAdmin
 
 @admin.register(LegalDocument)
 class LegalDocumentAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = ("title", "is_active", "last_updated")
     search_fields = ("title",)

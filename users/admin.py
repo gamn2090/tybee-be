@@ -6,6 +6,7 @@ from .models import User, PasswordResetOTP
 
 @admin.register(User)
 class UserAdmin(ModelAdmin):
+    list_per_page = 10000
     list_display = (
         "full_name",
         "phone_number",

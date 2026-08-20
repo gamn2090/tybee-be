@@ -4,6 +4,8 @@ from unfold.admin import ModelAdmin
 
 
 class BaseFeedbackAdmin(ModelAdmin):
+    list_per_page = 10000
+
     def has_add_permission(self, request):
         return False
 

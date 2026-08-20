@@ -109,7 +109,6 @@ class LocalPlaceImage(models.Model):
 
     class Meta:
         ordering = ["order", "id"]
-        unique_together = ("local_place", "order")
         verbose_name = "Local Place Image"
         verbose_name_plural = "Local Place Images"
 
