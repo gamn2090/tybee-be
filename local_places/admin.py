@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.conf import settings
 from django.db.models import Count, Q
 from django.http import JsonResponse
@@ -193,18 +193,27 @@ class LocalPlaceAdminForm(forms.ModelForm):
                 }
             )
 
-        readonly_fields = [
-            "latitude",
-            "longitude",
-            "google_places_id",
-            "google_places_link",
-        ]
+        # google_places_id / google_places_link keep coming from the Google
+        # Places autocomplete only — editing them by hand risks linking the
+        # place to the wrong Google listing. Latitude/longitude are NOT
+        # readonly: places with no Google listing (trails, parking lots,
+        # vending machines) need a way to set coordinates manually, and
+        # editors need to be able to correct a wrong pin (see MAPA task).
+        readonly_fields = ["google_places_id", "google_places_link"]
         for field in readonly_fields:
             if field in self.fields:
                 self.fields[field].widget.attrs["readonly"] = True
                 self.fields[field].widget.attrs[
                     "style"
                 ] = "pointer-events: none; opacity: 0.7;"
+
+        for field in ("latitude", "longitude"):
+            if field in self.fields:
+                self.fields[field].help_text = (
+                    "Auto-filled from the address lookup above — edit directly "
+                    "if the pin lands in the wrong spot or this place has no "
+                    "Google listing."
+                )
 
     def clean_contact_number(self):
         contact_number = self.cleaned_data.get("contact_number")
@@ -322,6 +331,27 @@ class LocalPlaceAdmin(FuzzySearchAdminMixin, ExportMixin, ModelAdmin):
     search_fields = ("name",)
     list_filter = ("category", "is_active", HasPhotosFilter, PopularityStarsFilter)
     autocomplete_fields = ("tags", "activities", "live_like_a_local")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if obj.google_places_id:
+            # Warning, not a hard error — some places genuinely share a
+            # building/Place ID (see MAPA task: Park of 7 Flags, Breezy
+            # Rider Tybee Taxi and Blue Heron Nature Trail all share one).
+            other_names = list(
+                LocalPlace.objects.filter(google_places_id=obj.google_places_id)
+                .exclude(pk=obj.pk)
+                .values_list("name", flat=True)
+            )
+            if other_names:
+                self.message_user(
+                    request,
+                    "This Google Place ID is also used by: "
+                    + ", ".join(other_names)
+                    + ". If they aren't actually the same building, fix the "
+                    "address lookup for one of them.",
+                    level=messages.WARNING,
+                )
 
     def get_search_haystack(self, obj):
         return [

@@ -60,9 +60,11 @@ function attachAutocomplete(input) {
         }
 
         // ── Coordinates ───────────────────────────────────────────────────
-        var loc = place.geometry.viewport
-            ? place.geometry.viewport.getCenter()
-            : place.geometry.location;
+        // Use the place's actual point location, not the viewport center —
+        // the viewport is sized to fit the whole business/area on a map and
+        // its center can land hundreds of meters off (see MAPA task: some
+        // pins were off by 500m+, and several were placed in the marsh).
+        var loc = place.geometry.location;
 
         setField("id_latitude", parseFloat(loc.lat().toFixed(7)));
         setField("id_longitude", parseFloat(loc.lng().toFixed(7)));

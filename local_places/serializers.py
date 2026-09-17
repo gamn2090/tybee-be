@@ -225,6 +225,29 @@ class CartMapSerializer(serializers.ModelSerializer):
 
 
 class RestaurantSerializer(serializers.ModelSerializer):
+    category_title = serializers.CharField(source="category.title", read_only=True)
+    image_presigned = serializers.SerializerMethodField()
+
     class Meta:
         model = LocalPlace
-        fields = ("id", "name", "latitude", "longitude", "address", "google_places_id")
+        fields = (
+            "id",
+            "name",
+            "latitude",
+            "longitude",
+            "address",
+            "google_places_id",
+            "category",
+            "category_title",
+            "image_presigned",
+        )
+
+    def get_image_presigned(self, obj):
+        # obj.images.all() reuses the `prefetch_related("images")` from the
+        # view's queryset (LocalPlaceImage.Meta.ordering = ["order", "id"]
+        # already sorts it) — calling .order_by() here would issue a new
+        # query per place instead of reusing the prefetch cache.
+        first_image = next(iter(obj.images.all()), None)
+        if first_image and first_image.image:
+            return PresignedUrlField().to_representation(first_image.image)
+        return None

@@ -367,6 +367,11 @@ AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME")
 GOOGLE_MAPS_API_KEY = env("GOOGLE_MAPS_API_KEY", default="")
+# Optional: a separate, unrestricted (or IP-restricted) key for server-side
+# calls, e.g. `refresh_place_coordinates`. GOOGLE_MAPS_API_KEY is used from
+# the browser (admin JS) and is typically HTTP-referrer restricted, which a
+# server request can't satisfy — falls back to it if this isn't set.
+GOOGLE_MAPS_SERVER_API_KEY = env("GOOGLE_MAPS_SERVER_API_KEY", default="")
 
 USE_S3 = all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME])
 
