@@ -1,5 +1,6 @@
 import requests
 from django.conf import settings
+from django.db.models import Q
 from rest_framework import viewsets, permissions, generics, status
 from rest_framework.response import Response
 from .models import LocalPlace, CartMap, Category, Tag, Activity, LiveLikeALocal
@@ -22,7 +23,11 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 
 class LocalPlaceViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = LocalPlace.objects.filter(is_active=True)
+    # A place is hidden if it's inactive itself, OR if its category was
+    # turned off in Admin (places without a category are unaffected).
+    queryset = LocalPlace.objects.filter(is_active=True).filter(
+        Q(category__isnull=True) | Q(category__is_active=True)
+    )
     serializer_class = LocalPlaceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -34,7 +39,7 @@ class CartMapViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -63,4 +68,6 @@ class RestaurantListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return LocalPlace.objects.filter(is_active=True)
+        return LocalPlace.objects.filter(is_active=True).filter(
+            Q(category__isnull=True) | Q(category__is_active=True)
+        )

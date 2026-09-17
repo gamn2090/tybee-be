@@ -2,6 +2,7 @@ import requests
 from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django_ckeditor_5.fields import CKEditor5Field
 from tybee_backend.validators import (
     validate_image_size,
     validate_image_extension,
@@ -30,7 +31,7 @@ class CartMap(models.Model):
         null=True,
         blank=True,
     )
-    description = models.TextField()
+    description = CKEditor5Field("Description", config_name="extends")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -55,6 +56,10 @@ class CartMap(models.Model):
 class Category(models.Model):
     title = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Inactive categories, and the places under them, are hidden from the app.",
+    )
 
     def __str__(self):
         return self.title
@@ -127,7 +132,7 @@ class LocalPlaceImage(models.Model):
 
 class LocalPlace(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = CKEditor5Field("Description", config_name="extends")
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,

@@ -1,9 +1,16 @@
+from decimal import Decimal, InvalidOperation
+
 from django import forms
 from django.contrib import admin
 from django.conf import settings
-from django.utils.html import format_html
+from django.db.models import Count, Q
+from django.http import JsonResponse
+from django.urls import path
+from django.utils.html import format_html, strip_tags
 
-# from import_export.admin import ImportExportModelAdmin
+from import_export import resources
+from import_export.admin import ExportMixin
+
 from .models import (
     LocalPlace,
     LocalPlaceImage,
@@ -16,6 +23,7 @@ from .models import (
 )
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.widgets import UnfoldAdminTimeWidget
+from tybee_backend.search_utils import FuzzySearchAdminMixin, fuzzy_match
 
 
 from django.core.exceptions import ValidationError
@@ -217,8 +225,83 @@ class LocalPlaceAdminForm(forms.ModelForm):
         return contact_number
 
 
+class HasPhotosFilter(admin.SimpleListFilter):
+    """Report filter: list #6 example — 'View all entries without a photograph'."""
+
+    title = "Has Photos"
+    parameter_name = "has_photos"
+
+    def lookups(self, request, model_admin):
+        return (("yes", "With photos"), ("no", "Without photos"))
+
+    def queryset(self, request, queryset):
+        queryset = queryset.annotate(_image_count=Count("images"))
+        if self.value() == "yes":
+            return queryset.filter(_image_count__gt=0)
+        if self.value() == "no":
+            return queryset.filter(_image_count=0)
+        return queryset
+
+
+class PopularityStarsFilter(admin.SimpleListFilter):
+    """Report filter: list #6 example — 'View all entries with 3-star recommendations'."""
+
+    title = "Popularity (stars)"
+    parameter_name = "stars"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("5", "5 stars"),
+            ("4", "4 stars"),
+            ("3", "3 stars"),
+            ("2", "2 stars"),
+            ("1", "1 star"),
+            ("0", "Unrated / 0 stars"),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value is None:
+            return queryset
+        try:
+            stars = Decimal(value)
+        except InvalidOperation:
+            return queryset
+        if stars == 0:
+            return queryset.filter(Q(popularity_score=0) | Q(popularity_score__isnull=True))
+        # Bucket by whole star: e.g. "3" matches 3.0 - 3.9
+        return queryset.filter(popularity_score__gte=stars, popularity_score__lt=stars + 1)
+
+
+class LocalPlaceResource(resources.ModelResource):
+    """Powers the 'Export' button (list #6 example — 'View all restaurants
+    with all entered details') added via `ExportMixin` below."""
+
+    category = resources.Field(attribute="category__title", column_name="category")
+
+    class Meta:
+        model = LocalPlace
+        fields = (
+            "id",
+            "name",
+            "category",
+            "description",
+            "address",
+            "contact_number",
+            "website_url",
+            "google_places_id",
+            "google_places_link",
+            "popularity_score",
+            "review_count",
+            "is_active",
+            "created_at",
+        )
+        export_order = fields
+
+
 @admin.register(LocalPlace)
-class LocalPlaceAdmin(ModelAdmin):
+class LocalPlaceAdmin(FuzzySearchAdminMixin, ExportMixin, ModelAdmin):
+    resource_classes = [LocalPlaceResource]
     form = LocalPlaceAdminForm
     list_per_page = 10000
     list_display = (
@@ -233,9 +316,61 @@ class LocalPlaceAdmin(ModelAdmin):
         "is_active",
         "created_at",
     )
+    # Kept non-empty so Django renders the search box; the actual matching
+    # logic lives in `get_search_haystack` below (punctuation/typo-tolerant,
+    # also matches category/tags/activities, not just the name).
     search_fields = ("name",)
-    list_filter = ("category", "is_active")
+    list_filter = ("category", "is_active", HasPhotosFilter, PopularityStarsFilter)
     autocomplete_fields = ("tags", "activities", "live_like_a_local")
+
+    def get_search_haystack(self, obj):
+        return [
+            obj.name,
+            obj.address,
+            obj.contact_number,
+            obj.category.title if obj.category else "",
+            " ".join(t.title for t in obj.tags.all()),
+            " ".join(a.title for a in obj.activities.all()),
+        ]
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset = queryset.select_related("category").prefetch_related(
+            "tags", "activities"
+        )
+        return super().get_search_results(request, queryset, search_term)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "search-suggestions/",
+                self.admin_site.admin_view(self.search_suggestions_view),
+                name="local_places_localplace_search_suggestions",
+            ),
+        ]
+        return custom_urls + urls
+
+    def search_suggestions_view(self, request):
+        """Backs the dropdown suggestions list under the changelist search box."""
+        query = (request.GET.get("q") or "").strip()
+        if not query:
+            return JsonResponse({"results": []})
+
+        queryset = self.get_queryset(request).select_related("category")
+        results = []
+        for obj in queryset:
+            haystacks = self.get_search_haystack(obj)
+            if any(fuzzy_match(query, h, self.fuzzy_search_threshold) for h in haystacks if h):
+                results.append(
+                    {
+                        "id": obj.pk,
+                        "name": obj.name,
+                        "category": obj.category.title if obj.category else "",
+                    }
+                )
+            if len(results) >= 8:
+                break
+        return JsonResponse({"results": results})
     fieldsets = (
         (
             "General Information",
@@ -307,10 +442,14 @@ class LocalPlaceAdmin(ModelAdmin):
 
 
 @admin.register(Category)
-class CategoryAdmin(ModelAdmin):
+class CategoryAdmin(FuzzySearchAdminMixin, ModelAdmin):
     list_per_page = 10000
-    list_display = ("title", "description_truncated")
+    list_display = ("title", "description_truncated", "is_active")
+    list_filter = ("is_active",)
     search_fields = ("title",)
+
+    def get_search_haystack(self, obj):
+        return [obj.title, obj.description]
 
     def description_truncated(self, obj):
         return (
@@ -323,17 +462,31 @@ class CategoryAdmin(ModelAdmin):
 
 
 @admin.register(Tag)
-class TagAdmin(ModelAdmin):
+class TagAdmin(FuzzySearchAdminMixin, ModelAdmin):
     list_per_page = 10000
     list_display = ("title",)
     search_fields = ("title",)
 
+    def get_search_haystack(self, obj):
+        return [obj.title]
+
 
 @admin.register(Activity)
-class ActivityAdmin(ModelAdmin):
+class ActivityAdmin(FuzzySearchAdminMixin, ModelAdmin):
     list_per_page = 10000
-    list_display = ("title", "description_truncated")
+    # `tags` shown so it's plain to see there is no functional difference
+    # left between how Tags and Activities are matched/searched today.
+    list_display = ("title", "description_truncated", "tag_list")
     search_fields = ("title",)
+    autocomplete_fields = ("tags",)
+
+    def get_search_haystack(self, obj):
+        return [obj.title, obj.description, " ".join(t.title for t in obj.tags.all())]
+
+    def tag_list(self, obj):
+        return ", ".join(t.title for t in obj.tags.all()) or "-"
+
+    tag_list.short_description = "Tags"
 
     def description_truncated(self, obj):
         return (
@@ -346,10 +499,13 @@ class ActivityAdmin(ModelAdmin):
 
 
 @admin.register(LiveLikeALocal)
-class LiveLikeALocalAdmin(ModelAdmin):
+class LiveLikeALocalAdmin(FuzzySearchAdminMixin, ModelAdmin):
     list_per_page = 10000
     list_display = ("name", "description_truncated")
     search_fields = ("name",)
+
+    def get_search_haystack(self, obj):
+        return [obj.name, obj.description]
 
     def description_truncated(self, obj):
         return (
@@ -362,7 +518,7 @@ class LiveLikeALocalAdmin(ModelAdmin):
 
 
 @admin.register(CartMap)
-class CartMapAdmin(ModelAdmin):
+class CartMapAdmin(FuzzySearchAdminMixin, ModelAdmin):
     list_per_page = 10000
     list_display = (
         "title",
@@ -380,14 +536,8 @@ class CartMapAdmin(ModelAdmin):
         ("PDF Upload", {"fields": ("pdf", "pdf_preview")}),
     ]
 
-    def description_truncated(self, obj):
-        return (
-            obj.description[:100] + "..."
-            if obj.description and len(obj.description) > 100
-            else obj.description
-        )
-
-    description_truncated.short_description = "Description"
+    def get_search_haystack(self, obj):
+        return [obj.title, strip_tags(obj.description)]
 
     class Media:
         js = ("local_places/js/cart_map_admin.js",)
@@ -437,11 +587,8 @@ class CartMapAdmin(ModelAdmin):
         return formfield
 
     def description_truncated(self, obj):
-        return (
-            obj.description[:100] + "..."
-            if obj.description and len(obj.description) > 100
-            else obj.description
-        )
+        plain = strip_tags(obj.description)
+        return plain[:100] + "..." if plain and len(plain) > 100 else plain
 
     description_truncated.short_description = "Description"
 

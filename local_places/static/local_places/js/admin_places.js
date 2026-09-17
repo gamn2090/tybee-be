@@ -355,3 +355,104 @@ function setField(id, value) {
         observer.observe(document.body, { childList: true, subtree: true });
     });
 })();
+
+// ─── Search suggestions dropdown (Admin issue #1) ─────────────────────────────
+(function () {
+    function init() {
+        var input = document.getElementById("searchbar");
+        if (!input || input.dataset.suggestionsAttached) return;
+        input.dataset.suggestionsAttached = "1";
+
+        var suggestUrl = window.location.pathname.replace(/\/?$/, "/") + "search-suggestions/";
+        var wrapper = input.closest("#toolbar") || input.parentNode;
+        wrapper.style.position = wrapper.style.position || "relative";
+
+        var dropdown = document.createElement("div");
+        dropdown.id = "lp-search-suggestions";
+        dropdown.style.cssText =
+            "display:none;position:absolute;z-index:1000;background:#fff;" +
+            "border:1px solid #d1d5db;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);" +
+            "max-height:260px;overflow-y:auto;min-width:240px;margin-top:4px;";
+        wrapper.appendChild(dropdown);
+
+        function positionDropdown() {
+            var rect = input.getBoundingClientRect();
+            var wrapperRect = wrapper.getBoundingClientRect();
+            dropdown.style.left = (rect.left - wrapperRect.left) + "px";
+            dropdown.style.top = (rect.bottom - wrapperRect.top) + "px";
+            dropdown.style.width = rect.width + "px";
+        }
+
+        function hideDropdown() {
+            dropdown.style.display = "none";
+        }
+
+        function renderResults(results) {
+            dropdown.innerHTML = "";
+            if (!results.length) {
+                hideDropdown();
+                return;
+            }
+            results.forEach(function (item) {
+                var row = document.createElement("div");
+                row.textContent = item.category ? item.name + "  —  " + item.category : item.name;
+                row.style.cssText =
+                    "padding:8px 12px;cursor:pointer;font-size:13px;color:#111827;";
+                row.addEventListener("mouseenter", function () {
+                    row.style.background = "#f3f4f6";
+                });
+                row.addEventListener("mouseleave", function () {
+                    row.style.background = "transparent";
+                });
+                row.addEventListener("mousedown", function (e) {
+                    // mousedown (not click) so it fires before the input's blur
+                    e.preventDefault();
+                    input.value = item.name;
+                    hideDropdown();
+                    input.form.submit();
+                });
+                dropdown.appendChild(row);
+            });
+            positionDropdown();
+            dropdown.style.display = "block";
+        }
+
+        var debounceTimer = null;
+        var currentController = null;
+
+        input.addEventListener("input", function () {
+            var query = input.value.trim();
+            clearTimeout(debounceTimer);
+            if (!query) {
+                hideDropdown();
+                return;
+            }
+            debounceTimer = setTimeout(function () {
+                if (currentController) currentController.abort();
+                currentController = new AbortController();
+                fetch(suggestUrl + "?q=" + encodeURIComponent(query), {
+                    signal: currentController.signal,
+                    credentials: "same-origin",
+                })
+                    .then(function (res) {
+                        return res.ok ? res.json() : { results: [] };
+                    })
+                    .then(function (data) {
+                        renderResults(data.results || []);
+                    })
+                    .catch(function () {
+                        /* ignore aborted/failed requests */
+                    });
+            }, 200);
+        });
+
+        input.addEventListener("blur", function () {
+            // Delay so a mousedown on a suggestion can still register
+            setTimeout(hideDropdown, 150);
+        });
+
+        window.addEventListener("resize", positionDropdown);
+    }
+
+    window.addEventListener("load", init);
+})();

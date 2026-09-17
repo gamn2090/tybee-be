@@ -1,4 +1,5 @@
 from django.db import models
+from django_ckeditor_5.fields import CKEditor5Field
 
 
 class RuleCategory(models.Model):
@@ -21,7 +22,7 @@ class Rule(models.Model):
         RuleCategory, on_delete=models.CASCADE, related_name="rules"
     )
     title = models.CharField(max_length=255)
-    description = models.TextField()
+    description = CKEditor5Field("Description", config_name="extends")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
