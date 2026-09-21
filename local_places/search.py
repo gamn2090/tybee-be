@@ -6,6 +6,7 @@ Reuses the normalize/fuzzy primitives already used by the Admin search
 """
 
 import re
+from difflib import SequenceMatcher
 
 from django.utils.html import strip_tags
 
@@ -14,6 +15,11 @@ from tybee_backend.search_utils import fuzzy_match, normalize_text
 # Below this length, fuzzy ratio comparisons produce noise (almost anything
 # is "close enough" to a 1-2 char string), so only exact substring matches.
 MIN_FUZZY_QUERY_LENGTH = 3
+
+# "Did you mean?" only suggests a name at least this close to the query.
+# Below it, the best fuzzy hit is usually just another place sharing a common
+# word ("bar", "grill"), not what the user meant.
+DID_YOU_MEAN_MIN_SIMILARITY = 0.75
 
 _WORD_RE = re.compile(r"[^A-Za-z0-9]+")
 
@@ -67,16 +73,43 @@ def _matches_term(place, term):
         if fuzzy_match(term, field):
             return True, False, field == place.name
 
-    # 3. Word vs word — catches "kelpy" vs "The Kelpie Pub" (kelpy ~ kelpie),
-    #    which comparing "kelpy" against the whole concatenated name would miss.
+    # 3. Word vs word — every query word must match some word of the place's
+    #    fields ("kelpy" ~ "Kelpie" in "The Kelpie Pub"). Requiring all words
+    #    keeps a common word like "bar" or "tybee" (in every address) from
+    #    matching half the catalog.
     query_words = _words(term)
-    for field in haystack_fields:
-        field_words = _words(field)
-        for query_word in query_words:
-            if any(fuzzy_match(query_word, field_word) for field_word in field_words):
-                return True, False, field == place.name
+    field_words = [word for field in haystack_fields for word in _words(field)]
+    if query_words and all(
+        any(fuzzy_match(query_word, word) for word in field_words)
+        for query_word in query_words
+    ):
+        name_words = _words(place.name)
+        name_hit = all(
+            any(fuzzy_match(query_word, word) for word in name_words)
+            for query_word in query_words
+        )
+        return True, False, name_hit
 
     return False, False, False
+
+
+def _name_similarity(term, name):
+    """0..1, how close `term` is to `name`: the better of the whole query vs
+    the whole name, and the average of each query word's best match among the
+    name's words."""
+    query, target = normalize_text(term), normalize_text(name)
+    if not query or not target:
+        return 0.0
+    whole = SequenceMatcher(None, query, target).ratio()
+    query_words = [w for w in (normalize_text(w) for w in _words(term)) if w]
+    name_words = [w for w in (normalize_text(w) for w in _words(name)) if w]
+    if not query_words or not name_words:
+        return whole
+    per_word = sum(
+        max(SequenceMatcher(None, query_word, name_word).ratio() for name_word in name_words)
+        for query_word in query_words
+    ) / len(query_words)
+    return max(whole, per_word)
 
 
 def rank_places(queryset, term):
@@ -98,12 +131,21 @@ def rank_places(queryset, term):
             continue
         if exact:
             any_exact = True
-        # Name hits first, exact matches before fuzzy-only, then alphabetical.
-        rank = (0 if name_hit else 1, 0 if exact else 1, (place.name or "").lower())
-        scored.append((rank, place))
+        similarity = _name_similarity(term, place.name or "")
+        # Name hits first, exact matches before fuzzy-only, then by how close
+        # the name is to the query (alphabetical only breaks ties).
+        rank = (
+            0 if name_hit else 1,
+            0 if exact else 1,
+            -similarity,
+            (place.name or "").lower(),
+        )
+        scored.append((rank, similarity, place))
 
-    scored.sort(key=lambda pair: pair[0])
-    ordered = [place for _, place in scored]
+    scored.sort(key=lambda item: item[0])
+    ordered = [place for _, _, place in scored]
 
-    did_you_mean = ordered[0].name if ordered and not any_exact else None
+    did_you_mean = None
+    if scored and not any_exact and scored[0][1] >= DID_YOU_MEAN_MIN_SIMILARITY:
+        did_you_mean = scored[0][2].name
     return ordered, did_you_mean

@@ -294,6 +294,92 @@ Coincide exactamente con la tabla de "Cómo probarlo" del documento original. (N
 
 **Status:** ✅ Implementado (hecho junto con BE-1, sin necesidad de `pg_trgm` — reutilizar `search_utils.py` bajó la estimación de 10-14h como anticipaba el documento).
 
+### Corrección posterior — orden de resultados y `did_you_mean` incorrectos contra el catálogo real
+
+**Archivo:** solo [`local_places/search.py`](local_places/search.py). No cambia la vista, el serializer ni el contrato — `search` y `did_you_mean` siguen igual, la app no se entera de este cambio.
+
+**El problema reportado (contra el catálogo real, no el de prueba):** `?search=Docks Bars` devolvía `did_you_mean: "Agave Bar and Grill"` con Doc's Bar en segundo lugar. Dos causas:
+1. `rank_places` ordenaba las coincidencias aproximadas **alfabéticamente**, no por parecido real con lo buscado ("agave…" < "doc's…").
+2. En el paso 3 de `_matches_term` bastaba con que **una sola palabra** coincidiera. Por eso `"bar"` traía todos los bares, y `"tybee"` traía el catálogo entero (está en todas las direcciones) — `"pizza tybee"` devolvía 17 lugares en vez de 1.
+
+**Qué se cambió:**
+
+1. Nueva constante y import:
+```python
+import re
+from difflib import SequenceMatcher
+...
+DID_YOU_MEAN_MIN_SIMILARITY = 0.75
+```
+
+2. Paso 3 de `_matches_term` — ahora exige que **todas** las palabras de la query matcheen alguna palabra de los campos del lugar (antes bastaba una), y se agregó `_name_similarity()` para medir qué tan parecido es el nombre a la búsqueda:
+```python
+query_words = _words(term)
+field_words = [word for field in haystack_fields for word in _words(field)]
+if query_words and all(
+    any(fuzzy_match(query_word, word) for word in field_words)
+    for query_word in query_words
+):
+    name_words = _words(place.name)
+    name_hit = all(
+        any(fuzzy_match(query_word, word) for word in name_words)
+        for query_word in query_words
+    )
+    return True, False, name_hit
+
+return False, False, False
+
+
+def _name_similarity(term, name):
+    query, target = normalize_text(term), normalize_text(name)
+    if not query or not target:
+        return 0.0
+    whole = SequenceMatcher(None, query, target).ratio()
+    query_words = [w for w in (normalize_text(w) for w in _words(term)) if w]
+    name_words = [w for w in (normalize_text(w) for w in _words(name)) if w]
+    if not query_words or not name_words:
+        return whole
+    per_word = sum(
+        max(SequenceMatcher(None, query_word, name_word).ratio() for name_word in name_words)
+        for query_word in query_words
+    ) / len(query_words)
+    return max(whole, per_word)
+```
+
+3. `rank_places` ahora ordena por similitud real (no alfabético) y solo sugiere `did_you_mean` cuando la similitud supera `DID_YOU_MEAN_MIN_SIMILARITY`:
+```python
+scored = []
+any_exact = False
+for place in queryset:
+    matched, exact, name_hit = _matches_term(place, term)
+    if not matched:
+        continue
+    if exact:
+        any_exact = True
+    similarity = _name_similarity(term, place.name or "")
+    rank = (0 if name_hit else 1, 0 if exact else 1, -similarity, (place.name or "").lower())
+    scored.append((rank, similarity, place))
+
+scored.sort(key=lambda item: item[0])
+ordered = [place for _, _, place in scored]
+
+did_you_mean = None
+if scored and not any_exact and scored[0][1] >= DID_YOU_MEAN_MIN_SIMILARITY:
+    did_you_mean = scored[0][2].name
+return ordered, did_you_mean
+```
+
+**Verificado con un catálogo de prueba más parecido al real** (`Doc's Bar`, `The Kelpie Pub`, `Agave Bar and Grill`, `North Beach Bar`, `Pizza Time`, + 13 lugares de relleno, todos con "Tybee Island, GA" en la dirección):
+
+| Query | Antes | Después |
+|---|---|---|
+| `Docks Bars` | `did_you_mean: "Agave Bar and Grill"`, Doc's Bar 2do | `did_you_mean: "Doc's Bar"`, Doc's Bar 1ro ✔ |
+| `pizza tybee` | 17 resultados | 1 resultado (`Pizza Time`) ✔ |
+| `bar` | todos los bares (esperado, es una sola palabra genuina) | sin cambios, correcto |
+| `kelpy` | `did_you_mean: "The Kelpie Pub"` | `did_you_mean: null` (similitud 0.73 < 0.75; el lugar sigue apareciendo en `results`, solo ya no se sugiere como "Did you mean" por quedar debajo del umbral de confianza) |
+
+**Status:** ✅ Corregido y verificado.
+
 ---
 
 ## MAPA — Coordenadas de los lugares (parcial: lo que es responsabilidad de backend/admin)
