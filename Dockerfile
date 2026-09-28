@@ -39,9 +39,9 @@ RUN adduser --disabled-password --gecos '' appuser \
 # Switch to non-root user
 USER appuser
 
-# Add health check
+# Add health check (matches the port docker-entrypoint.sh actually binds to)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health/ || exit 1
+    CMD curl -f http://localhost:${PORT:-8000}/api/health/ || exit 1
 
 # Expose port
 EXPOSE 8000

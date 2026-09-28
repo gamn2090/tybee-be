@@ -32,4 +32,7 @@ if not User.objects.filter(phone_number="9999999999", is_superuser=True).exists(
 EOF
 
 # Start server (default: gunicorn)
-exec gunicorn tybee_backend.wsgi:application --bind 0.0.0.0:8000
+# Render (and most PaaS) assign the port to listen on via $PORT and route
+# traffic to it — a hardcoded 8000 works in plain Docker/ECS but makes the
+# service unreachable on Render. Falls back to 8000 for local `docker run`.
+exec gunicorn tybee_backend.wsgi:application --bind 0.0.0.0:${PORT:-8000}

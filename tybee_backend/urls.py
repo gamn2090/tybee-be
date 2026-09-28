@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path, include
 
 admin.site.site_header = "Tybee Admin Dashboard"
@@ -30,7 +31,16 @@ from drf_spectacular.views import (
 from django.conf import settings
 from django.conf.urls.static import static
 
+
+def health_check(request):
+    # No DB/auth touched on purpose — this just proves the process is up,
+    # for the platform's health check (e.g. Render) and the Dockerfile's
+    # own HEALTHCHECK instruction, which pointed at this exact path already.
+    return JsonResponse({"status": "ok"})
+
+
 urlpatterns = [
+    path("api/health/", health_check, name="health-check"),
     path("admin/", admin.site.urls),
     path("auth/", include("users.urls")),
     path("legal/", include("legal.urls")),
