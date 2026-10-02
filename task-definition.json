@@ -58,11 +58,11 @@
       "secrets": [
         {
           "name": "SECRET_KEY",
-          "valueFrom": "TYBEE_APP_ARN:SECRET_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:tybee-app-YIvi9w:SECRET_KEY::"
         },
         {
           "name": "EMAIL_HOST_PASSWORD",
-          "valueFrom": "TYBEE_APP_ARN:EMAIL_HOST_PASSWORD::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:tybee-app-YIvi9w:EMAIL_HOST_PASSWORD::"
         },
         {
           "name": "DB_PASSWORD",
