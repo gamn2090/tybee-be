@@ -13,11 +13,15 @@
           "protocol": "tcp"
         }
       ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/tybee-backend",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
       "environment": [
-        {
-          "name": "SECRET_KEY",
-          "value": "django-insecure-$*ghk$kn*dadqf!d3_3a2bumg%8ny^9zi34pozyi#x@tk9d_04"
-        },
         {
           "name": "DEBUG",
           "value": "True"
@@ -43,10 +47,6 @@
           "value": "rohit.bhatt@protonshub.in"
         },
         {
-          "name": "EMAIL_HOST_PASSWORD",
-          "value": "jjgelmfyiulatutr"
-        },
-        {
           "name": "DEFAULT_FROM_EMAIL",
           "value": "rohit.bhatt@protonshub.in"
         },
@@ -56,6 +56,14 @@
         }
       ],
       "secrets": [
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "TYBEE_APP_ARN:SECRET_KEY::"
+        },
+        {
+          "name": "EMAIL_HOST_PASSWORD",
+          "valueFrom": "TYBEE_APP_ARN:EMAIL_HOST_PASSWORD::"
+        },
         {
           "name": "DB_PASSWORD",
           "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:DB-VtLI21:password::"
@@ -86,6 +94,10 @@
         },
         {
           "name": "AWS_REGION",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:aws_keys-s9iivr:AWS_REGION::"
+        },
+        {
+          "name": "AWS_S3_REGION_NAME",
           "valueFrom": "arn:aws:secretsmanager:us-east-2:168379940497:secret:aws_keys-s9iivr:AWS_REGION::"
         }
       ]

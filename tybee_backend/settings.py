@@ -118,6 +118,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://api.tybeego.com",
     "http://13.48.128.119",
     "https://app.api.tybeego.com",
+    "https://tybee-be.onrender.com",
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -362,10 +363,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
 # AWS S3 storage (recommended for ECS/production)
-AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME")
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="")
 GOOGLE_MAPS_API_KEY = env("GOOGLE_MAPS_API_KEY", default="")
 # Optional: a separate, unrestricted (or IP-restricted) key for server-side
 # calls, e.g. `refresh_place_coordinates`. GOOGLE_MAPS_API_KEY is used from
